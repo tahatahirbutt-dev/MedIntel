@@ -201,37 +201,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               SizedBox(height: 40),
-
-              // Quick Login Hint (for demo)
-              Card(
-                color: Colors.blue.shade50,
-                child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text(
-                            'Demo Credentials',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'For testing: user@example.com / password123',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),
