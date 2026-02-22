@@ -9,240 +9,255 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-  final AuthService _authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _agreedToTerms = false;
 
-  void _register() async {
-    if (_nameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty ||
-        _confirmPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Please fill all fields')));
-      return;
-    }
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Passwords do not match')));
-      return;
-    }
+  Future<void> _register() async {
+    // Validate form fields
+    if (!_formKey.currentState!.validate()) return;
 
-    if (_passwordController.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Password must be at least 6 characters')),
-      );
+    if (!_agreedToTerms) {
+      _showSnackBar('Please accept the Terms & Conditions to continue.');
       return;
     }
 
     setState(() => _isLoading = true);
 
-    final user = await _authService.register(
-      _emailController.text,
-      _passwordController.text,
-      _nameController.text,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (user != null) {
-      // Navigate to main app
-      Navigator.pushReplacementNamed(context, '/main');
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed. Email might be in use.')),
+    try {
+      await _authService.register(
+        _emailController.text,
+        _passwordController.text,
+        _nameController.text.trim(),
       );
+
+      if (!mounted) return;
+      // Pop entire stack back to AuthWrapper, which will automatically
+      // redirect to MainNavigationScreen via authStateChanges().
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Account'),
+        title: const Text('Create Account'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 20),
-            Text(
-              'Create Account',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Fill in your details to get started',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-
-            SizedBox(height: 30),
-
-            // Name Field
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Full Name',
-                prefixIcon: Icon(Icons.person),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              const Text(
+                'Create Account',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-            ),
-
-            SizedBox(height: 20),
-
-            // Email Field
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+              const SizedBox(height: 8),
+              Text(
+                'Fill in your details to get started',
+                style: TextStyle(color: Colors.grey.shade600),
               ),
-              keyboardType: TextInputType.emailAddress,
-            ),
+              const SizedBox(height: 30),
 
-            SizedBox(height: 20),
+              // Full Name
+              TextFormField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.words,
+                decoration: _inputDecoration('Full Name', Icons.person),
+                validator: (val) =>
+                    (val == null || val.trim().isEmpty) ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 20),
 
-            // Password Field
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility_off : Icons.visibility,
+              // Email
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: _inputDecoration('Email', Icons.email),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'Email is required';
+                  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$');
+                  if (!emailRegex.hasMatch(val.trim())) return 'Enter a valid email';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Password
+              TextFormField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: _inputDecoration('Password', Icons.lock).copyWith(
+                  suffixIcon: _visibilityToggle(
+                    _obscurePassword,
+                    () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
-                  onPressed: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Password is required';
+                  if (val.length < 6) return 'Minimum 6 characters required';
+                  return null;
+                },
               ),
-            ),
+              const SizedBox(height: 20),
 
-            SizedBox(height: 20),
-
-            // Confirm Password Field
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: _obscureConfirmPassword,
-              decoration: InputDecoration(
-                labelText: 'Confirm Password',
-                prefixIcon: Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility_off
-                        : Icons.visibility,
+              // Confirm Password
+              TextFormField(
+                controller: _confirmPasswordController,
+                obscureText: _obscureConfirmPassword,
+                decoration:
+                    _inputDecoration('Confirm Password', Icons.lock_outline).copyWith(
+                  suffixIcon: _visibilityToggle(
+                    _obscureConfirmPassword,
+                    () => setState(
+                        () => _obscureConfirmPassword = !_obscureConfirmPassword),
                   ),
-                  onPressed: () {
-                    setState(
-                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                    );
-                  },
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                validator: (val) {
+                  if (val == null || val.isEmpty) return 'Please confirm your password';
+                  if (val != _passwordController.text) return 'Passwords do not match';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Terms & Conditions (now functional)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Checkbox(
+                    value: _agreedToTerms,
+                    onChanged: (val) => setState(() => _agreedToTerms = val ?? false),
+                  ),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          const TextSpan(text: 'I agree to the '),
+                          TextSpan(
+                            text: 'Terms & Conditions',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const TextSpan(text: ' and '),
+                          TextSpan(
+                            text: 'Privacy Policy',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
+
+              // Register Button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _register,
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Create Account', style: TextStyle(fontSize: 18)),
                 ),
               ),
-            ),
+              const SizedBox(height: 20),
 
-            SizedBox(height: 30),
-
-            // Terms & Conditions
-            Row(
-              children: [
-                Checkbox(value: true, onChanged: (val) {}),
-                Expanded(
+              // Sign In link
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
                   child: Text.rich(
                     TextSpan(
                       children: [
-                        TextSpan(text: 'I agree to the '),
+                        const TextSpan(text: 'Already have an account? '),
                         TextSpan(
-                          text: 'Terms & Conditions',
+                          text: 'Sign In',
                           style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        TextSpan(text: ' and '),
-                        TextSpan(
-                          text: 'Privacy Policy',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ],
-            ),
-
-            SizedBox(height: 30),
-
-            // Register Button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _register,
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text('Create Account', style: TextStyle(fontSize: 18)),
               ),
-            ),
-
-            SizedBox(height: 20),
-
-            // Already have account
-            Center(
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(text: 'Already have an account? '),
-                      TextSpan(
-                        text: 'Sign In',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade400),
+      ),
+    );
+  }
+
+  Widget _visibilityToggle(bool obscure, VoidCallback onTap) {
+    return IconButton(
+      icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+      onPressed: onTap,
     );
   }
 }

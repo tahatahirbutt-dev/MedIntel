@@ -12,24 +12,24 @@ class AuthWrapper extends StatelessWidget {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // Show loading screen while checking auth state
-          return SplashScreen();
+          return const SplashScreen();
         }
 
         if (snapshot.hasData && snapshot.data != null) {
-          // User is logged in, go to main app
-          return MainNavigationScreen();
+          // Always go to MainNavigationScreen — it opens on the Upload tab
+          // by default (index 0), so new users land there naturally.
+          return const MainNavigationScreen();
         }
 
-        // User is not logged in, show login screen
-        return LoginScreen();
+        return const LoginScreen();
       },
     );
   }
 }
 
-// Simple splash screen
 class SplashScreen extends StatelessWidget {
+  const SplashScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,9 +37,9 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FlutterLogo(size: 100),
-            SizedBox(height: 20),
-            Text(
+            const FlutterLogo(size: 100),
+            const SizedBox(height: 20),
+            const Text(
               'Med Intel',
               style: TextStyle(
                 fontSize: 32,
@@ -47,10 +47,10 @@ class SplashScreen extends StatelessWidget {
                 color: Colors.blue,
               ),
             ),
-            SizedBox(height: 20),
-            CircularProgressIndicator(),
-            SizedBox(height: 20),
-            Text('Loading...', style: TextStyle(color: Colors.grey)),
+            const SizedBox(height: 20),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text('Loading...', style: TextStyle(color: Colors.grey.shade600)),
           ],
         ),
       ),
