@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:med_intel/services/auth_service.dart';
 import 'package:med_intel/screens/register_screen.dart';
 import 'package:med_intel/screens/forgot_password_screen.dart';
+import 'package:med_intel/screens/main_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -35,14 +36,22 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text,
         _passwordController.text,
       );
-      // No manual navigation needed — AuthWrapper handles it via authStateChanges()
+
+      if (!mounted) return;
+      // Navigate to upload/main screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     } finally {
@@ -89,9 +98,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     fillColor: Colors.grey.shade50,
                   ),
                   validator: (val) {
-                    if (val == null || val.trim().isEmpty) return 'Email is required';
-                    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$');
-                    if (!emailRegex.hasMatch(val.trim())) return 'Enter a valid email';
+                    if (val == null || val.trim().isEmpty)
+                      return 'Email is required';
+                    final emailRegex = RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$',
+                    );
+                    if (!emailRegex.hasMatch(val.trim()))
+                      return 'Enter a valid email';
                     return null;
                   },
                 ),
@@ -106,7 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
@@ -117,8 +132,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     filled: true,
                     fillColor: Colors.grey.shade50,
                   ),
-                  validator: (val) =>
-                      (val == null || val.isEmpty) ? 'Password is required' : null,
+                  validator: (val) => (val == null || val.isEmpty)
+                      ? 'Password is required'
+                      : null,
                 ),
                 const SizedBox(height: 10),
 
@@ -168,7 +184,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Expanded(child: Divider()),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text('OR', style: TextStyle(color: Colors.grey.shade600)),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
                     ),
                     const Expanded(child: Divider()),
                   ],

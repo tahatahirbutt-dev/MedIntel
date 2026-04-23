@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:med_intel/services/auth_service.dart';
+import 'package:med_intel/screens/login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -49,9 +50,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (!mounted) return;
-      // Pop entire stack back to AuthWrapper, which will automatically
-      // redirect to MainNavigationScreen via authStateChanges().
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      // Show success message
+      _showSnackBar('Thank you for registering');
+
+      // Navigate to login screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     } catch (e) {
       if (!mounted) return;
       _showSnackBar(e.toString());
@@ -104,8 +110,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
                 decoration: _inputDecoration('Full Name', Icons.person),
-                validator: (val) =>
-                    (val == null || val.trim().isEmpty) ? 'Name is required' : null,
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? 'Name is required'
+                    : null,
               ),
               const SizedBox(height: 20),
 
@@ -115,9 +122,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: _inputDecoration('Email', Icons.email),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Email is required';
+                  if (val == null || val.trim().isEmpty)
+                    return 'Email is required';
                   final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$');
-                  if (!emailRegex.hasMatch(val.trim())) return 'Enter a valid email';
+                  if (!emailRegex.hasMatch(val.trim()))
+                    return 'Enter a valid email';
                   return null;
                 },
               ),
@@ -146,16 +155,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
                 decoration:
-                    _inputDecoration('Confirm Password', Icons.lock_outline).copyWith(
-                  suffixIcon: _visibilityToggle(
-                    _obscureConfirmPassword,
-                    () => setState(
-                        () => _obscureConfirmPassword = !_obscureConfirmPassword),
-                  ),
-                ),
+                    _inputDecoration(
+                      'Confirm Password',
+                      Icons.lock_outline,
+                    ).copyWith(
+                      suffixIcon: _visibilityToggle(
+                        _obscureConfirmPassword,
+                        () => setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        ),
+                      ),
+                    ),
                 validator: (val) {
-                  if (val == null || val.isEmpty) return 'Please confirm your password';
-                  if (val != _passwordController.text) return 'Passwords do not match';
+                  if (val == null || val.isEmpty)
+                    return 'Please confirm your password';
+                  if (val != _passwordController.text)
+                    return 'Passwords do not match';
                   return null;
                 },
               ),
@@ -167,7 +183,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   Checkbox(
                     value: _agreedToTerms,
-                    onChanged: (val) => setState(() => _agreedToTerms = val ?? false),
+                    onChanged: (val) =>
+                        setState(() => _agreedToTerms = val ?? false),
                   ),
                   Expanded(
                     child: Text.rich(
@@ -210,7 +227,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Create Account', style: TextStyle(fontSize: 18)),
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(fontSize: 18),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
