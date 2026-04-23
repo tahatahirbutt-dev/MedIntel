@@ -4,6 +4,7 @@ import 'package:med_intel/screens/pharmacyscreen.dart';
 import 'package:med_intel/screens/notificationsscreen.dart';
 import 'package:med_intel/screens/profilescreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({Key? key}) : super(key: key);
@@ -36,6 +37,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  Future<void> _openCamera() async {
+    final ImagePicker picker = ImagePicker();
+    try {
+      final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+      if (photo != null) {
+        // Image captured successfully - you can process it here
+        print('Image captured: ${photo.path}');
+        // You can pass the image path to UploadScreen or process it further
+      }
+    } catch (e) {
+      print('Error taking picture: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error accessing camera: $e')));
+    }
   }
 
   @override
@@ -115,9 +133,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       // Floating Action Button for quick prescription upload (optional)
       floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
-              onPressed: () {
-                // Navigate to upload screen with camera option
-              },
+              onPressed: _openCamera,
               child: Icon(Icons.camera_alt),
               backgroundColor: Colors.blue,
             )
