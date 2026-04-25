@@ -13,6 +13,7 @@ void main() async {
 }
 
 class MedIntelApp extends StatelessWidget {
+  
   const MedIntelApp({Key? key}) : super(key: key);
 
   @override

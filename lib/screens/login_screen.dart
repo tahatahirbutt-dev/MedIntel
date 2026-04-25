@@ -71,7 +71,17 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 40),
-                const Center(child: FlutterLogo(size: 80)),
+                //const Center(child: FlutterLogo(size: 80)),
+                Center(
+                  child: Image.asset(
+                    filterQuality: FilterQuality.high,
+                    'assets/images/logo2.png',
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+
                 const SizedBox(height: 20),
                 const Text(
                   'Welcome Back',

@@ -37,7 +37,14 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const FlutterLogo(size: 100),
+            //const FlutterLogo(size: 100),
+            Image.asset(
+              filterQuality: FilterQuality.high,
+              'assets/images/logo2.png',
+              width: 150,
+              height: 150,
+              fit: BoxFit.contain,
+            ),
             const SizedBox(height: 20),
             const Text(
               'Med Intel',
