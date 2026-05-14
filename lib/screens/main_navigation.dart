@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/screens/upload_screen.dart';
 import 'package:med_intel/screens/pharmacyscreen.dart';
 import 'package:med_intel/screens/notificationsscreen.dart';
@@ -65,6 +66,17 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () =>
+                Navigator.pushNamed(context, AppNavigation.medicineSearch),
+            tooltip: 'Search medicines',
+          ),
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () => Navigator.pushNamed(context, AppNavigation.cart),
+            tooltip: 'View cart',
+          ),
           // User avatar in app bar (optional)
           if (user?.photoURL != null)
             CircleAvatar(
@@ -76,11 +88,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               backgroundColor: Colors.blue,
               child: Text(
                 user!.displayName![0].toUpperCase(),
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
               radius: 16,
             ),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
         ],
       ),
       body: IndexedStack(index: _selectedIndex, children: _screens),

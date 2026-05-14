@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/models/prescription_model.dart';
 
 class ResultsScreen extends StatelessWidget {
@@ -78,29 +79,60 @@ class ResultsScreen extends StatelessWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // TODO: Find pharmacies
+                    Navigator.pushNamed(
+                      context,
+                      AppNavigation.pharmacy,
+                      arguments: PharmacyScreenArgs(
+                        medicineIds: prescription.medicines
+                            .map((medicine) => medicine.name)
+                            .toList(),
+                      ),
+                    );
                   },
-                  icon: Icon(Icons.local_pharmacy),
-                  label: Text('Find Pharmacies'),
+                  icon: const Icon(Icons.local_pharmacy),
+                  label: const Text('Find Pharmacies'),
                   style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.pop(context); // Go back to upload
                   },
-                  icon: Icon(Icons.upload),
-                  label: Text('Upload Another'),
+                  icon: const Icon(Icons.upload),
+                  label: const Text('Upload Another'),
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  AppNavigation.drugInteractionChecker,
+                  arguments: {
+                    'medicines': prescription.medicines
+                        .map((medicine) => medicine.name)
+                        .toList(),
+                  },
+                );
+              },
+              icon: const Icon(Icons.security),
+              label: const Text('Check Interactions'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: Colors.green.shade700,
+              ),
+            ),
           ),
         ],
       ),

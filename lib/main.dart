@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/screens/auth_wrapper.dart'; // Import AuthWrapper
 
 void main() async {
@@ -13,7 +14,6 @@ void main() async {
 }
 
 class MedIntelApp extends StatelessWidget {
-  
   const MedIntelApp({Key? key}) : super(key: key);
 
   @override
@@ -30,7 +30,8 @@ class MedIntelApp extends StatelessWidget {
         ),
       ),
       debugShowCheckedModeBanner: false,
-      home: AuthWrapper(), // Use AuthWrapper
+      onGenerateRoute: AppNavigation.generateRoute,
+      home: const AuthWrapper(), // Use AuthWrapper
     );
   }
 }

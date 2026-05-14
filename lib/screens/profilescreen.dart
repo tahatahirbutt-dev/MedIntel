@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:med_intel/screens/medicalprofilescreen.dart';
 import 'package:med_intel/screens/auth_wrapper.dart';
+import 'package:med_intel/screens/order_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -70,9 +71,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Logout failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
     }
   }
 
@@ -108,9 +109,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundImage: _profileImage != null
                             ? FileImage(_profileImage!) as ImageProvider
                             : (_firebaseUser?.photoURL != null
-                                ? NetworkImage(_firebaseUser!.photoURL!)
-                                : null),
-                        child: (_profileImage == null &&
+                                  ? NetworkImage(_firebaseUser!.photoURL!)
+                                  : null),
+                        child:
+                            (_profileImage == null &&
                                 _firebaseUser?.photoURL == null)
                             ? Text(
                                 _initials,
@@ -128,7 +130,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.camera_alt, color: Colors.white),
+                          icon: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                          ),
                           onPressed: _pickImage,
                         ),
                       ),
@@ -247,7 +252,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildActionButton(
                     icon: Icons.history,
                     label: 'Order History',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const OrderHistoryScreen(),
+                        ),
+                      );
+                    },
                   ),
                   _buildActionButton(
                     icon: Icons.help,
@@ -270,7 +282,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(color: Colors.red.shade300),
               ),
-              child: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+              child: const Text(
+                'Sign Out',
+                style: TextStyle(color: Colors.red),
+              ),
             ),
           ),
         ],
@@ -319,8 +334,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           enabled: enabled,
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             filled: !enabled,
             fillColor: enabled ? null : Colors.grey.shade100,
           ),
