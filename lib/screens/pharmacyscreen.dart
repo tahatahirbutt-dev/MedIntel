@@ -146,6 +146,14 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     });
   }
 
+  bool _isOpen(String id) =>
+      (_mockData.firstWhere(
+            (d) => d['id'] == id,
+            orElse: () => {'isOpen': true},
+          )['isOpen']
+          as bool?) ??
+      true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,12 +167,14 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                 ? _buildSkeleton()
                 : _showMap
                 ? _buildMapPlaceholder()
-                : _buildPharmacyList(),
+                : _buildList(),
           ),
         ],
       ),
     );
   }
+
+  // ── Header ────────────────────────────────────
 
   Widget _buildHeader() {
     return Container(
@@ -182,30 +192,31 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Nearby Pharmacies',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Nearby Pharmacies',
+                      style: TextStyle(
+                        fontFamily: 'Outfit',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'F-7 Markaz, Islamabad · ${_pharmacies.length} found',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
-                      color: Colors.white.withOpacity(0.8),
+                    const SizedBox(height: 2),
+                    Text(
+                      'F-7 Markaz, Islamabad · ${_pharmacies.length} found',
+                      style: TextStyle(
+                        fontFamily: 'DM Sans',
+                        fontSize: 13,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              // Map/List toggle
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.15),
@@ -215,12 +226,12 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildToggleBtn(
+                    _toggleBtn(
                       Icons.list,
                       !_showMap,
                       () => setState(() => _showMap = false),
                     ),
-                    _buildToggleBtn(
+                    _toggleBtn(
                       Icons.map_outlined,
                       _showMap,
                       () => setState(() => _showMap = true),
@@ -231,7 +242,6 @@ class _PharmacyScreenState extends State<PharmacyScreen>
             ],
           ),
           const SizedBox(height: 14),
-          // Search bar
           Container(
             height: 44,
             decoration: BoxDecoration(
@@ -264,7 +274,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  Widget _buildToggleBtn(IconData icon, bool active, VoidCallback onTap) {
+  Widget _toggleBtn(IconData icon, bool active, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -277,6 +287,8 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       ),
     );
   }
+
+  // ── Sort chips ────────────────────────────────
 
   Widget _buildSortBar() {
     final filters = [
@@ -293,7 +305,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: filters.map((f) {
-            final isActive = _sortBy == f.$1;
+            final active = _sortBy == f.$1;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: GestureDetector(
@@ -305,17 +317,17 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.primary : AppColors.borderLight,
+                    color: active ? AppColors.primary : AppColors.borderLight,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isActive ? AppColors.primary : AppColors.border,
+                      color: active ? AppColors.primary : AppColors.border,
                     ),
                   ),
                   child: Text(
                     f.$2,
                     style: AppTextStyles.labelMedium.copyWith(
-                      color: isActive ? Colors.white : AppColors.textSecondary,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                      color: active ? Colors.white : AppColors.textSecondary,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -327,281 +339,325 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  Widget _buildPharmacyList() {
+  // ── List ──────────────────────────────────────
+
+  Widget _buildList() {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       itemCount: _pharmacies.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _buildPharmacyCard(_pharmacies[i]),
+      itemBuilder: (_, i) => _buildCard(_pharmacies[i]),
     );
   }
 
-  Widget _buildPharmacyCard(Pharmacy p) {
-    final isOpen =
-        _mockData.firstWhere(
-              (d) => d['id'] == p.id,
-              orElse: () => {'isOpen': true},
-            )['isOpen']
-            as bool? ??
-        true;
+  // ── Pharmacy card ─────────────────────────────
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Logo placeholder
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.local_pharmacy_rounded,
-                    color: AppColors.primary,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              p.name,
-                              style: AppTextStyles.titleMedium,
-                            ),
-                          ),
-                          StatusBadge(
-                            label: isOpen ? 'Open' : 'Closed',
-                            type: isOpen
-                                ? StatusType.success
-                                : StatusType.danger,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 13,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              p.address,
-                              style: AppTextStyles.bodySmall,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+  Widget _buildCard(Pharmacy p) {
+    final open = _isOpen(p.id);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
-          ),
-
-          // Metrics Row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-            child: Row(
-              children: [
-                _buildMetric(
-                  Icons.star_rounded,
-                  '${p.rating}',
-                  '${p.reviewCount} reviews',
-                  Colors.amber,
-                ),
-                const SizedBox(width: 16),
-                _buildMetric(
-                  Icons.delivery_dining_outlined,
-                  '${p.deliveryTime} min',
-                  'delivery',
-                  AppColors.secondary,
-                ),
-                const SizedBox(width: 16),
-                _buildMetric(
-                  Icons.near_me_outlined,
-                  '${p.distance} km',
-                  'away',
-                  AppColors.info,
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondaryLight,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'PKR ${p.deliveryFee.toInt()} delivery',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.secondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Availability
-          if (p.availability.isNotEmpty) ...[
-            const Divider(height: 1),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Name row ──────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Availability',
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.textSecondary,
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.local_pharmacy_rounded,
+                      color: AppColors.primary,
+                      size: 24,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: p.availability.entries.map((e) {
-                      final inStock = e.value;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          p.name,
+                          style: AppTextStyles.titleMedium,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        decoration: BoxDecoration(
-                          color: inStock
-                              ? AppColors.successLight
-                              : AppColors.dangerLight,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: inStock
-                                ? AppColors.success.withOpacity(0.3)
-                                : AppColors.danger.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        const SizedBox(height: 3),
+                        Row(
                           children: [
-                            Icon(
-                              inStock ? Icons.check : Icons.close,
+                            const Icon(
+                              Icons.location_on_outlined,
                               size: 12,
-                              color: inStock
-                                  ? AppColors.success
-                                  : AppColors.danger,
+                              color: AppColors.textMuted,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              e.key[0].toUpperCase() + e.key.substring(1),
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: inStock
-                                    ? AppColors.success
-                                    : AppColors.danger,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                p.address,
+                                style: AppTextStyles.bodySmall,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }).toList(),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  StatusBadge(
+                    label: open ? 'Open' : 'Closed',
+                    type: open ? StatusType.success : StatusType.danger,
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Metrics — OVERFLOW FIX ─────────
+            // Previously all 4 items were in one Row with a Spacer → overflow.
+            // Now: 3 equal chips in Row 1, delivery fee as its own full-width Row 2.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Column(
+                children: [
+                  // Row 1: rating · delivery time · distance
+                  // Each chip is Expanded so they share the full width equally.
+                  Row(
+                    children: [
+                      _metricChip(
+                        icon: Icons.star_rounded,
+                        value: '${p.rating}',
+                        label: '${p.reviewCount} reviews',
+                        color: Colors.amber,
+                        bg: Colors.amber.withOpacity(0.12),
+                      ),
+                      const SizedBox(width: 8),
+                      _metricChip(
+                        icon: Icons.delivery_dining_outlined,
+                        value: '${p.deliveryTime} min',
+                        label: 'delivery',
+                        color: AppColors.secondary,
+                        bg: AppColors.secondaryLight,
+                      ),
+                      const SizedBox(width: 8),
+                      _metricChip(
+                        icon: Icons.near_me_outlined,
+                        value: '${p.distance} km',
+                        label: 'distance',
+                        color: AppColors.info,
+                        bg: AppColors.infoLight,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Row 2: delivery fee — full width, no overflow possible
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.local_shipping_outlined,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Delivery fee: PKR ${p.deliveryFee.toInt()}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Availability ───────────────────
+            if (p.availability.isNotEmpty) ...[
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Availability',
+                      style: AppTextStyles.labelMedium.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: p.availability.entries.map((e) {
+                        final inStock = e.value;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: inStock
+                                ? AppColors.successLight
+                                : AppColors.dangerLight,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: inStock
+                                  ? AppColors.success.withOpacity(0.3)
+                                  : AppColors.danger.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                inStock ? Icons.check : Icons.close,
+                                size: 12,
+                                color: inStock
+                                    ? AppColors.success
+                                    : AppColors.danger,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                e.key[0].toUpperCase() + e.key.substring(1),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: inStock
+                                      ? AppColors.success
+                                      : AppColors.danger,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // ── Action buttons ─────────────────
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.map_outlined, size: 16),
+                      label: const Text('Directions'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _OrderNowButton(
+                      enabled: open,
+                      onPressed: open
+                          ? () => Navigator.pushNamed(context, '/cart')
+                          : null,
+                    ),
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ), // Container
+    ); // ClipRRect
+  }
 
-          // Action Row
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.map_outlined, size: 16),
-                    label: const Text('Directions'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+  // ── Metric chip — Expanded so width is always equal ──
+
+  Widget _metricChip({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    required Color bg,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          // MainAxisSize.max is required — the parent Expanded gives this
+          // Container a tight width; the Row must fill it so Flexible gets
+          // a bounded constraint and Text ellipsis works correctly.
+          children: [
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    value,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: isOpen
-                        ? () => Navigator.pushNamed(context, '/cart')
-                        : null,
-                    icon: const Icon(Icons.shopping_bag_outlined, size: 16),
-                    label: const Text('Order now'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      backgroundColor: AppColors.primary,
-                      disabledBackgroundColor: AppColors.border,
+                  Text(
+                    label,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontSize: 10,
+                      color: AppColors.textMuted,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMetric(IconData icon, String value, String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 3),
-        Text(
-          value,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 2),
-        Text(label, style: AppTextStyles.bodySmall),
-      ],
-    );
-  }
+  // ── Map placeholder ───────────────────────────
 
   Widget _buildMapPlaceholder() {
     return Container(
@@ -617,7 +673,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppColors.primaryLight,
                 shape: BoxShape.circle,
               ),
@@ -631,8 +687,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
             Text('Map view', style: AppTextStyles.headlineMedium),
             const SizedBox(height: 8),
             Text(
-              'Google Maps integration\ncoming soon',
-              textAlign: TextAlign.center,
+              'Google Maps integration coming soon',
               style: AppTextStyles.bodyMedium,
             ),
           ],
@@ -641,17 +696,77 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
+  // ── Skeleton ──────────────────────────────────
+
   Widget _buildSkeleton() {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: 3,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, __) => _SkeletonCard(),
+      itemBuilder: (_, __) => const _SkeletonCard(),
     );
   }
 }
 
+// ── Order Now button — gradient so it's distinct from Directions ──────────────
+
+class _OrderNowButton extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback? onPressed;
+
+  const _OrderNowButton({required this.enabled, this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: enabled
+              ? const LinearGradient(
+                  colors: [Color(0xFF059669), Color(0xFF0EA47D)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                )
+              : null,
+          color: enabled ? null : AppColors.border,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: enabled
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF059669).withOpacity(0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : [],
+        ),
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+          label: const Text('Order now'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            disabledForegroundColor: AppColors.textMuted,
+            disabledBackgroundColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: AppTextStyles.buttonText.copyWith(fontSize: 14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Skeleton card ─────────────────────────────────
+
 class _SkeletonCard extends StatefulWidget {
+  const _SkeletonCard();
   @override
   State<_SkeletonCard> createState() => _SkeletonCardState();
 }
@@ -659,7 +774,7 @@ class _SkeletonCard extends StatefulWidget {
 class _SkeletonCardState extends State<_SkeletonCard>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c;
-  late final Animation<double> _anim;
+  late final Animation<double> _a;
 
   @override
   void initState() {
@@ -668,7 +783,7 @@ class _SkeletonCardState extends State<_SkeletonCard>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.4, end: 0.9).animate(_c);
+    _a = Tween<double>(begin: 0.4, end: 0.85).animate(_c);
   }
 
   @override
@@ -678,16 +793,14 @@ class _SkeletonCardState extends State<_SkeletonCard>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => Container(
-        height: 130,
-        decoration: BoxDecoration(
-          color: AppColors.border.withOpacity(_anim.value),
-          borderRadius: BorderRadius.circular(18),
-        ),
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _a,
+    builder: (_, __) => Container(
+      height: 140,
+      decoration: BoxDecoration(
+        color: AppColors.border.withOpacity(_a.value),
+        borderRadius: BorderRadius.circular(18),
       ),
-    );
-  }
+    ),
+  );
 }
