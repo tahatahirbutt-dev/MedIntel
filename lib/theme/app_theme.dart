@@ -282,13 +282,13 @@ class AppPrimaryButton extends StatelessWidget {
   final Color? color;
 
   const AppPrimaryButton({
-    Key? key,
+    super.key,
     required this.label,
     this.onPressed,
     this.isLoading = false,
     this.icon,
     this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -373,7 +373,7 @@ class AppTextField extends StatelessWidget {
   final void Function(String)? onChanged;
 
   const AppTextField({
-    Key? key,
+    super.key,
     required this.label,
     this.hint,
     this.controller,
@@ -386,7 +386,7 @@ class AppTextField extends StatelessWidget {
     this.maxLines = 1,
     this.onTap,
     this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -422,11 +422,11 @@ class SectionHeader extends StatelessWidget {
   final VoidCallback? onAction;
 
   const SectionHeader({
-    Key? key,
+    super.key,
     required this.title,
     this.actionLabel,
     this.onAction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -454,8 +454,7 @@ class StatusBadge extends StatelessWidget {
   final String label;
   final StatusType type;
 
-  const StatusBadge({Key? key, required this.label, required this.type})
-    : super(key: key);
+  const StatusBadge({super.key, required this.label, required this.type});
 
   @override
   Widget build(BuildContext context) {

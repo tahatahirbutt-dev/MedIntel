@@ -9,10 +9,10 @@ class ResultsScreen extends StatefulWidget {
   final String imagePath;
 
   const ResultsScreen({
-    Key? key,
+    super.key,
     required this.prescription,
     required this.imagePath,
-  }) : super(key: key);
+  });
 
   @override
   State<ResultsScreen> createState() => _ResultsScreenState();
@@ -619,7 +619,7 @@ class _ResultsScreenState extends State<ResultsScreen>
         const SizedBox(width: 12),
         Expanded(
           child: AppPrimaryButton(
-            label: 'Find pharmacies',
+            label: 'Pharmacies',
             icon: Icons.local_pharmacy_outlined,
             onPressed: _goToPharmacy,
           ),

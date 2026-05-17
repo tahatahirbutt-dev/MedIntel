@@ -5,11 +5,12 @@ import 'package:med_intel/screens/upload_screen.dart';
 import 'package:med_intel/screens/pharmacyscreen.dart';
 import 'package:med_intel/screens/notificationsscreen.dart';
 import 'package:med_intel/screens/profilescreen.dart';
-import 'package:med_intel/screens/medicine_search_screen.dart';
+import 'package:med_intel/screens/cart_screen.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({Key? key}) : super(key: key);
+  const MainNavigationScreen({super.key});
+
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
@@ -21,6 +22,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<Widget> _screens = [
     const UploadScreen(),
     PharmacyScreen(medicineIds: const []),
+    const CartScreen(),
     const NotificationsScreen(),
     const ProfileScreen(),
   ];
@@ -28,6 +30,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<_NavItem> _navItems = const [
     _NavItem(Icons.document_scanner_outlined, Icons.document_scanner, 'Scan'),
     _NavItem(Icons.local_pharmacy_outlined, Icons.local_pharmacy, 'Pharmacy'),
+    _NavItem(Icons.shopping_cart_outlined, Icons.shopping_cart, 'Cart'),
     _NavItem(Icons.notifications_outlined, Icons.notifications, 'Alerts'),
     _NavItem(Icons.person_outline, Icons.person, 'Profile'),
   ];
@@ -65,11 +68,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       backgroundColor: AppColors.background,
       body: IndexedStack(index: _selectedIndex, children: _screens),
 
-      // ── Search FAB (only on scan tab) ────────
+      // Show FAB only on Scan tab (index 0)
       floatingActionButton: _selectedIndex == 0 ? _buildFAB() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
-      // ── Bottom Navigation ────────────────────
       bottomNavigationBar: _buildBottomBar(),
     );
   }
@@ -124,11 +126,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: isSelected
             ? BoxDecoration(
                 color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppColors.primary.withOpacity(0.25),
+                  width: 1,
+                ),
               )
             : null,
         child: Column(
@@ -142,6 +148,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             const SizedBox(height: 4),
             Text(
               item.label,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'DM Sans',
                 fontSize: 11,

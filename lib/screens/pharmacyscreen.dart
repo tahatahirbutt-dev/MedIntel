@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:med_intel/models/pharmacy.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PharmacyScreen extends StatefulWidget {
   final List<String> medicineIds;
-  const PharmacyScreen({Key? key, required this.medicineIds}) : super(key: key);
+  const PharmacyScreen({super.key, required this.medicineIds});
   @override
   State<PharmacyScreen> createState() => _PharmacyScreenState();
 }
@@ -12,9 +13,12 @@ class PharmacyScreen extends StatefulWidget {
 class _PharmacyScreenState extends State<PharmacyScreen>
     with SingleTickerProviderStateMixin {
   List<Pharmacy> _pharmacies = [];
+  List<Pharmacy> _filteredPharmacies = [];
   bool _isLoading = true;
   String _sortBy = 'distance';
   bool _showMap = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   late final AnimationController _anim;
 
@@ -23,12 +27,15 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       'id': '1',
       'name': 'Care Pharmacy',
       'address': 'F-7 Markaz, Islamabad',
+      'latitude': 33.7390,
+      'longitude': 73.1819,
       'distance': 1.2,
       'rating': 4.5,
       'reviewCount': 128,
       'deliveryFee': 120.0,
       'deliveryTime': 25,
       'isOpen': true,
+      'phone': '+92 51 2827070',
       'availability': {
         'amoxicillin': true,
         'ibuprofen': true,
@@ -39,12 +46,15 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       'id': '2',
       'name': 'Medicare Pharmacy',
       'address': 'G-9/4, Islamabad',
+      'latitude': 33.7450,
+      'longitude': 73.1895,
       'distance': 2.5,
       'rating': 4.2,
       'reviewCount': 89,
       'deliveryFee': 150.0,
       'deliveryTime': 35,
       'isOpen': true,
+      'phone': '+92 51 2923456',
       'availability': {
         'amoxicillin': true,
         'ibuprofen': false,
@@ -55,12 +65,15 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       'id': '3',
       'name': 'Life Pharmacy',
       'address': 'Blue Area, Islamabad',
+      'latitude': 33.7300,
+      'longitude': 73.1750,
       'distance': 3.1,
       'rating': 4.7,
       'reviewCount': 245,
       'deliveryFee': 100.0,
       'deliveryTime': 20,
       'isOpen': true,
+      'phone': '+92 51 2345678',
       'availability': {
         'amoxicillin': true,
         'ibuprofen': true,
@@ -71,12 +84,15 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       'id': '4',
       'name': 'City Medical Store',
       'address': 'I-8/4, Islamabad',
+      'latitude': 33.7150,
+      'longitude': 73.1550,
       'distance': 4.3,
       'rating': 4.0,
       'reviewCount': 67,
       'deliveryFee': 180.0,
       'deliveryTime': 45,
       'isOpen': false,
+      'phone': '+92 51 2456789',
       'availability': {
         'amoxicillin': false,
         'ibuprofen': true,
@@ -92,13 +108,22 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
+    _searchController.addListener(_onSearchChanged);
     _loadPharmacies();
   }
 
   @override
   void dispose() {
     _anim.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+      _applyFilters();
+    });
   }
 
   void _loadPharmacies() {
@@ -120,30 +145,50 @@ class _PharmacyScreenState extends State<PharmacyScreen>
               ),
             )
             .toList();
+        _filteredPharmacies = _pharmacies;
         _isLoading = false;
       });
       _anim.forward();
     });
   }
 
+  void _applyFilters() {
+    setState(() {
+      _filteredPharmacies = _pharmacies.where((pharmacy) {
+        final matchesSearch =
+            _searchQuery.isEmpty ||
+            pharmacy.name.toLowerCase().contains(_searchQuery) ||
+            pharmacy.address.toLowerCase().contains(_searchQuery);
+        return matchesSearch;
+      }).toList();
+
+      // Apply sorting after filtering
+      _sortPharmacies(_filteredPharmacies);
+    });
+  }
+
   void _sort(String by) {
     setState(() {
       _sortBy = by;
-      switch (by) {
-        case 'distance':
-          _pharmacies.sort((a, b) => a.distance.compareTo(b.distance));
-          break;
-        case 'rating':
-          _pharmacies.sort((a, b) => b.rating.compareTo(a.rating));
-          break;
-        case 'deliveryTime':
-          _pharmacies.sort((a, b) => a.deliveryTime.compareTo(b.deliveryTime));
-          break;
-        case 'price':
-          _pharmacies.sort((a, b) => a.deliveryFee.compareTo(b.deliveryFee));
-          break;
-      }
+      _sortPharmacies(_filteredPharmacies);
     });
+  }
+
+  void _sortPharmacies(List<Pharmacy> list) {
+    switch (_sortBy) {
+      case 'distance':
+        list.sort((a, b) => a.distance.compareTo(b.distance));
+        break;
+      case 'rating':
+        list.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'deliveryTime':
+        list.sort((a, b) => a.deliveryTime.compareTo(b.deliveryTime));
+        break;
+      case 'price':
+        list.sort((a, b) => a.deliveryFee.compareTo(b.deliveryFee));
+        break;
+    }
   }
 
   bool _isOpen(String id) =>
@@ -154,6 +199,36 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           as bool?) ??
       true;
 
+  Map<String, dynamic> _getPharmacyData(String id) {
+    return _mockData.firstWhere((d) => d['id'] == id, orElse: () => {});
+  }
+
+  void _openDirections(double latitude, double longitude, String name) async {
+    final String googleMapsUrl =
+        "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude";
+    if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
+      await launchUrl(
+        Uri.parse(googleMapsUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open maps')));
+    }
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    try {
+      await launchUrl(launchUri);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not make call')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -162,19 +237,18 @@ class _PharmacyScreenState extends State<PharmacyScreen>
         children: [
           _buildHeader(),
           _buildSortBar(),
+          if (_searchQuery.isNotEmpty) _buildSearchResultsHeader(),
           Expanded(
             child: _isLoading
                 ? _buildSkeleton()
                 : _showMap
-                ? _buildMapPlaceholder()
+                ? _buildMapView()
                 : _buildList(),
           ),
         ],
       ),
     );
   }
-
-  // ── Header ────────────────────────────────────
 
   Widget _buildHeader() {
     return Container(
@@ -207,7 +281,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'F-7 Markaz, Islamabad · ${_pharmacies.length} found',
+                      'F-7 Markaz, Islamabad · ${_filteredPharmacies.length} found',
                       style: TextStyle(
                         fontFamily: 'DM Sans',
                         fontSize: 13,
@@ -242,31 +316,39 @@ class _PharmacyScreenState extends State<PharmacyScreen>
             ],
           ),
           const SizedBox(height: 14),
+          // Search Bar
           Container(
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withOpacity(0.95),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white.withOpacity(0.3)),
             ),
-            child: Row(
-              children: [
-                const SizedBox(width: 12),
-                Icon(
-                  Icons.search,
-                  color: Colors.white.withOpacity(0.7),
-                  size: 18,
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search pharmacies by name or location...',
+                prefixIcon: const Icon(Icons.search, size: 18),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged();
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Search pharmacies...',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                ),
-              ],
+              ),
+              style: const TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -288,7 +370,28 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  // ── Sort chips ────────────────────────────────
+  Widget _buildSearchResultsHeader() {
+    return Container(
+      color: AppColors.warningLight,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          const Icon(Icons.search, size: 16, color: AppColors.warning),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Showing ${_filteredPharmacies.length} result${_filteredPharmacies.length != 1 ? 's' : ''} for "$_searchQuery"',
+              style: const TextStyle(
+                fontFamily: 'DM Sans',
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildSortBar() {
     final filters = [
@@ -339,21 +442,39 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  // ── List ──────────────────────────────────────
-
   Widget _buildList() {
+    if (_filteredPharmacies.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.store_outlined, size: 60, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            const Text(
+              'No pharmacies found',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your search filters',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      itemCount: _pharmacies.length,
+      itemCount: _filteredPharmacies.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _buildCard(_pharmacies[i]),
+      itemBuilder: (_, i) => _buildCard(_filteredPharmacies[i]),
     );
   }
 
-  // ── Pharmacy card ─────────────────────────────
-
   Widget _buildCard(Pharmacy p) {
     final open = _isOpen(p.id);
+    final pharmacyData = _getPharmacyData(p.id);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
@@ -430,15 +551,11 @@ class _PharmacyScreenState extends State<PharmacyScreen>
               ),
             ),
 
-            // ── Metrics — OVERFLOW FIX ─────────
-            // Previously all 4 items were in one Row with a Spacer → overflow.
-            // Now: 3 equal chips in Row 1, delivery fee as its own full-width Row 2.
+            // ── Metrics ────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               child: Column(
                 children: [
-                  // Row 1: rating · delivery time · distance
-                  // Each chip is Expanded so they share the full width equally.
                   Row(
                     children: [
                       _metricChip(
@@ -467,7 +584,6 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Row 2: delivery fee — full width, no overflow possible
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
@@ -570,40 +686,75 @@ class _PharmacyScreenState extends State<PharmacyScreen>
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(12),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.map_outlined, size: 16),
-                      label: const Text('Directions'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 11),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openDirections(
+                            pharmacyData['latitude'] as double? ?? 0,
+                            pharmacyData['longitude'] as double? ?? 0,
+                            p.name,
+                          ),
+                          icon: const Icon(Icons.map_outlined, size: 16),
+                          label: const Text('Directions'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _makePhoneCall(
+                            pharmacyData['phone'] as String? ?? '',
+                          ),
+                          icon: const Icon(Icons.call_outlined, size: 16),
+                          label: const Text('Call'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _OrderNowButton(
-                      enabled: open,
-                      onPressed: open
-                          ? () => Navigator.pushNamed(context, '/cart')
-                          : null,
-                    ),
+                  const SizedBox(height: 8),
+                  _OrderNowButton(
+                    enabled: open,
+                    pharmacyId: p.id,
+                    pharmacyName: p.name,
+                    onPressed: open
+                        ? () => _navigateToCheckout(p) : null,
                   ),
                 ],
               ),
             ),
           ],
         ),
-      ), // Container
-    ); // ClipRRect
+      ),
+    );
   }
 
-  // ── Metric chip — Expanded so width is always equal ──
+  void _navigateToCheckout(Pharmacy pharmacy) {
+    Navigator.pushNamed(
+      context,
+      '/checkout',
+      arguments: {
+        'pharmacyId': pharmacy.id,
+        'pharmacyName': pharmacy.name,
+        'deliveryFee': pharmacy.deliveryFee,
+        'deliveryTime': pharmacy.deliveryTime,
+        'medicineIds': widget.medicineIds,
+      },
+    );
+  }
 
   Widget _metricChip({
     required IconData icon,
@@ -620,9 +771,6 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           borderRadius: BorderRadius.circular(9),
         ),
         child: Row(
-          // MainAxisSize.max is required — the parent Expanded gives this
-          // Container a tight width; the Row must fill it so Flexible gets
-          // a bounded constraint and Text ellipsis works correctly.
           children: [
             Icon(icon, size: 13, color: color),
             const SizedBox(width: 4),
@@ -657,9 +805,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  // ── Map placeholder ───────────────────────────
-
-  Widget _buildMapPlaceholder() {
+  Widget _buildMapView() {
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -687,16 +833,27 @@ class _PharmacyScreenState extends State<PharmacyScreen>
             Text('Map view', style: AppTextStyles.headlineMedium),
             const SizedBox(height: 8),
             Text(
-              'Google Maps integration coming soon',
+              '${_filteredPharmacies.length} pharmacies nearby',
               style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Integrate Google Maps
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Google Maps integration coming soon'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.map),
+              label: const Text('View on Map'),
             ),
           ],
         ),
       ),
     );
   }
-
-  // ── Skeleton ──────────────────────────────────
 
   Widget _buildSkeleton() {
     return ListView.separated(
@@ -708,17 +865,23 @@ class _PharmacyScreenState extends State<PharmacyScreen>
   }
 }
 
-// ── Order Now button — gradient so it's distinct from Directions ──────────────
-
 class _OrderNowButton extends StatelessWidget {
   final bool enabled;
+  final String pharmacyId;
+  final String pharmacyName;
   final VoidCallback? onPressed;
 
-  const _OrderNowButton({required this.enabled, this.onPressed});
+  const _OrderNowButton({
+    required this.enabled,
+    required this.pharmacyId,
+    required this.pharmacyName,
+    this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
+      width: double.infinity,
       height: 44,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -762,8 +925,6 @@ class _OrderNowButton extends StatelessWidget {
     );
   }
 }
-
-// ── Skeleton card ─────────────────────────────────
 
 class _SkeletonCard extends StatefulWidget {
   const _SkeletonCard();

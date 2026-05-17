@@ -1,0 +1,73 @@
+{
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit"
+    }
+  },
+  "dart.devToolsTheme": "dark",
+  "dart.lineLength": 80,
+  "dart.enableSdkFormatter": true,
+  "dart.previewFlutterUiGuides": false,
+  "dart.openDevTools": "never",
+  "dart.flutterSdkPath": "C:\\flutter",
+  "dart.hotReloadOnSave": true,
+  "dart.hotRestartOnSave": false,
+  "dart.triggerSignatureHelpAutomatically": false,
+  "dart.completeFunctionCalls": false,
+  "dart.renameFilesWithClasses": "prompt",
+  "dart.showTodos": false,
+  "dart.showTestCodeLens": false,
+  "dart.enableCompletionCommitCharacters": false,
+  "dart.analyzeAngularTemplates": false,
+  "dart.checkForSdkUpdates": false,
+  "dart.vmServiceLogFile": null,
+  "dart.maxLogLineLength": 500,
+  "dart.showInspectorNotebookButtons": false,
+  "dart.showMemoryUsage": false,
+  "dart.displayBadgesForTestFiles": false,
+  "dart.warnWhenEditingFilesOutsideWorkspace": false,
+  "dart.treatWarningsAsErrors": false,
+  "[json]": {
+    "editor.formatOnSave": true
+  },
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "modifications",
+  "editor.codeActionsOnSaveTimeout": 750,
+  "editor.wordBasedSuggestions": "off",
+  "editor.parameterHints.enabled": false,
+  "editor.minimap.enabled": false,
+  "editor.renderWhitespace": "none",
+  "editor.hideSyncStatus": true,
+  "editor.renderControlCharacters": false,
+  "editor.excludeNotebookParentActionBar": true,
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/**": true,
+    "**/build/**": true,
+    "**/.dart_tool/**": true,
+    "**/.gradle/**": true,
+    "**/android/.gradle/**": true,
+    "**/.idea/**": true,
+    "**/__pycache__/**": true,
+    "**/venv/**": true,
+    "**/.venv/**": true,
+    "**/dist/**": true,
+    "**/.next/**": true
+  },
+  "search.exclude": {
+    "**/.git": true,
+    "**/.gradle": true,
+    "**/node_modules": true,
+    "**/.dart_tool": true,
+    "**/build": true,
+    "**/.idea": true,
+    "**/.next": true
+  },
+  "extensions.ignoreRecommendations": false,
+  "workbench.enableExperiments": false,
+  "workbench.settings.openDefaultSettings": false,
+  "telemetry.telemetryLevel": "off",
+  "redhat.telemetry.enabled": false
+}
