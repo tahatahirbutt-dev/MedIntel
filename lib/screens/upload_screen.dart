@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:med_intel/screens/result_screen.dart';
@@ -7,7 +6,9 @@ import 'package:med_intel/services/mock_data.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class UploadScreen extends StatefulWidget {
-  const UploadScreen({Key? key}) : super(key: key);
+  final VoidCallback? onOpenMedicineSearch;
+
+  const UploadScreen({super.key, this.onOpenMedicineSearch});
   @override
   State<UploadScreen> createState() => _UploadScreenState();
 }
@@ -119,7 +120,11 @@ class _UploadScreenState extends State<UploadScreen>
                 _buildActionRow(),
                 const SizedBox(height: 28),
                 _buildUploadButton(),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
+                if (widget.onOpenMedicineSearch != null) ...[
+                  _buildMedicineSearchShortcut(),
+                  const SizedBox(height: 20),
+                ],
                 _buildTipsCard(),
               ]),
             ),
@@ -444,6 +449,72 @@ class _UploadScreenState extends State<UploadScreen>
           ? null
           : _uploadPrescription,
       isLoading: _isUploading,
+    );
+  }
+
+  Widget _buildMedicineSearchShortcut() {
+    return GestureDetector(
+      onTap: widget.onOpenMedicineSearch,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0E7490), Color(0xFF2563EB)],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.medication_outlined,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Search medicines',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Browse catalog, prices & alternatives',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.white.withOpacity(0.85),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withOpacity(0.9),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

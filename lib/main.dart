@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/screens/auth_wrapper.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
@@ -18,8 +19,9 @@ class MedIntelApp extends StatelessWidget {
     return MaterialApp(
       title: 'Med Intel',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light, // ← all design tokens applied here
+      theme: AppTheme.light,
       home: const AuthWrapper(),
+      onGenerateRoute: AppNavigation.generateRoute,
     );
   }
 }

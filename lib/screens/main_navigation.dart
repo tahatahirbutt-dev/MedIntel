@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:med_intel/screens/upload_screen.dart';
+import 'package:med_intel/screens/medicine_search_screen.dart';
 import 'package:med_intel/screens/pharmacyscreen.dart';
 import 'package:med_intel/screens/notificationsscreen.dart';
 import 'package:med_intel/screens/profilescreen.dart';
@@ -19,8 +20,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   final User? _user = FirebaseAuth.instance.currentUser;
 
-  final List<Widget> _screens = [
-    const UploadScreen(),
+  late final List<Widget> _screens = [
+    UploadScreen(onOpenMedicineSearch: () => _onItemTapped(1)),
+    const MedicineSearchScreen(embeddedInNav: true),
     PharmacyScreen(medicineIds: const []),
     const CartScreen(),
     const NotificationsScreen(),
@@ -29,6 +31,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<_NavItem> _navItems = const [
     _NavItem(Icons.document_scanner_outlined, Icons.document_scanner, 'Scan'),
+    _NavItem(Icons.medication_outlined, Icons.medication, 'Search'),
     _NavItem(Icons.local_pharmacy_outlined, Icons.local_pharmacy, 'Pharmacy'),
     _NavItem(Icons.shopping_cart_outlined, Icons.shopping_cart, 'Cart'),
     _NavItem(Icons.notifications_outlined, Icons.notifications, 'Alerts'),
@@ -151,7 +154,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'DM Sans',
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? AppColors.primary : AppColors.textMuted,
               ),

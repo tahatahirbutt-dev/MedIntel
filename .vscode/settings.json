@@ -65,7 +65,7 @@
     "**/.idea": true,
     "**/.next": true
   },
-  "extensions.ignoreRecommendations": false,
+  "extensions.ignoreRecommendations": true,
   "workbench.enableExperiments": false,
   "workbench.settings.openDefaultSettings": false,
   "telemetry.telemetryLevel": "off",

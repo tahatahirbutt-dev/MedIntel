@@ -1,9 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:med_intel/services/mock_data.dart';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
+import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/theme/app_theme.dart';
+
 class MedicineSearchScreen extends StatefulWidget {
-  const MedicineSearchScreen({Key? key}) : super(key: key);
+  final bool embeddedInNav;
+
+  const MedicineSearchScreen({super.key, this.embeddedInNav = false});
 
   @override
   _MedicineSearchScreenState createState() => _MedicineSearchScreenState();
@@ -121,16 +126,10 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     });
   }
 
-  void _removeFromHistory(String item) {
-    setState(() {
-      _searchHistory.remove(item);
-    });
-  }
-
   void _navigateToMedicineDetails(Map<String, dynamic> medicine) {
     Navigator.pushNamed(
       context,
-      '/medicine-details',
+      AppNavigation.medicineDetails,
       arguments: {
         'medicineId': medicine['id'],
         'medicineName': medicine['name'],
@@ -138,248 +137,334 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     );
   }
 
+  bool get _hasQuery => _searchController.text.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Search Medicines'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Search Bar
-          Padding(padding: const EdgeInsets.all(16), child: _buildSearchBar()),
-
-          // Filters (only show when search is active)
-          if (_searchController.text.isNotEmpty)
-            _buildFiltersSection()
-          else
-            Expanded(child: _buildEmptySearchState()),
-
-          // Results or suggestions
-          if (_searchController.text.isNotEmpty)
-            Expanded(child: _buildSearchResults()),
+          _buildHeader(),
+          if (_hasQuery) _buildFiltersSection(),
+          Expanded(
+            child: _hasQuery ? _buildSearchResults() : _buildEmptySearchState(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return TextField(
-      controller: _searchController,
-      decoration: InputDecoration(
-        hintText: 'Search medicines by name...',
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch)
-            : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+  Widget _buildHeader() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0E7490), Color(0xFF2563EB)],
         ),
+      ),
+      padding: EdgeInsets.fromLTRB(20, widget.embeddedInNav ? 54 : 48, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (!widget.embeddedInNav)
+                IconButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              if (!widget.embeddedInNav) const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.medication_outlined,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Medicine Search',
+                      style: AppTextStyles.displaySmall.copyWith(
+                        color: Colors.white,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      'Find medicines, prices & details',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white.withOpacity(0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Search by name (e.g. Amoxicillin)...',
+                hintStyle: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.textMuted,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+                suffixIcon: _hasQuery
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: _clearSearch,
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
+              ),
+              style: AppTextStyles.bodyLarge.copyWith(fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFiltersSection() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return Container(
+      color: AppColors.surface,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Category Filter
-          const Text(
-            'Category',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
+          Text('Category', style: AppTextStyles.labelLarge),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _categories.map((category) {
+          SizedBox(
+            height: 36,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                final category = _categories[i];
                 final isSelected = _selectedCategory == category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(category),
-                    selected: isSelected,
-                    onSelected: (_) => _onCategoryChanged(category),
-                    backgroundColor: Colors.grey.shade100,
-                    selectedColor: Colors.blue.shade200,
+                return FilterChip(
+                  label: Text(category, style: const TextStyle(fontSize: 12)),
+                  selected: isSelected,
+                  onSelected: (_) => _onCategoryChanged(category),
+                  backgroundColor: AppColors.borderLight,
+                  selectedColor: AppColors.primaryLight,
+                  checkmarkColor: AppColors.primary,
+                  labelStyle: TextStyle(
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.primary : AppColors.border,
                   ),
                 );
-              }).toList(),
+              },
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Price Filter
-          const Text(
-            'Max Price',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: Slider(
-                  value: _priceRangeMax,
-                  min: 0,
-                  max: 1000,
-                  divisions: 20,
-                  label: 'PKR ${_priceRangeMax.toStringAsFixed(0)}',
-                  onChanged: _onPriceRangeChanged,
-                ),
-              ),
+              Text('Max price', style: AppTextStyles.labelLarge),
+              const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(6),
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'PKR ${_priceRangeMax.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blue.shade700,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 13,
                   ),
                 ),
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppColors.primary,
+              thumbColor: AppColors.primary,
+              inactiveTrackColor: AppColors.border,
+            ),
+            child: Slider(
+              value: _priceRangeMax,
+              min: 0,
+              max: 1000,
+              divisions: 20,
+              onChanged: _onPriceRangeChanged,
+            ),
+          ),
+          const Divider(height: 1),
         ],
       ),
     );
   }
 
   Widget _buildEmptySearchState() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.search, size: 60, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            const Text(
-              'Search for Medicines',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Enter a medicine name to find information, alternatives, and nearby pharmacies',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Search History
-            if (_searchHistory.isNotEmpty) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Searches',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      setState(() => _searchHistory.clear());
-                    },
-                    child: const Text('Clear All'),
-                  ),
-                ],
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.search_rounded,
+                  size: 36,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Search for medicines',
+                style: AppTextStyles.headlineMedium,
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _searchHistory.map((item) {
-                  return InputChip(
-                    label: Text(item),
-                    onPressed: () {
-                      _searchController.text = item;
-                      _performSearch(item);
-                    },
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () => _removeFromHistory(item),
-                    backgroundColor: Colors.blue.shade50,
-                    side: BorderSide(color: Colors.blue.shade200),
-                  );
-                }).toList(),
+              Text(
+                'Look up dosage, pricing, and add items to your cart before visiting a pharmacy.',
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
               ),
             ],
-          ],
+          ),
         ),
-      ),
+        if (_searchHistory.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Recent searches', style: AppTextStyles.headlineSmall),
+              TextButton(
+                onPressed: () => setState(() => _searchHistory.clear()),
+                child: const Text('Clear all'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _searchHistory.map((item) {
+              return ActionChip(
+                label: Text(item),
+                avatar: const Icon(Icons.history, size: 16),
+                onPressed: () {
+                  _searchController.text = item;
+                  _performSearch(item);
+                  setState(() {});
+                },
+                backgroundColor: AppColors.primaryLight,
+                side: const BorderSide(color: AppColors.border),
+              );
+            }).toList(),
+          ),
+        ],
+        const SizedBox(height: 24),
+        Text('Popular searches', style: AppTextStyles.headlineSmall),
+        const SizedBox(height: 10),
+        ...['Amoxicillin', 'Metformin', 'Ibuprofen'].map((name) {
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.medication_liquid_outlined,
+                  color: AppColors.secondary,
+                  size: 20,
+                ),
+              ),
+              title: Text(name, style: AppTextStyles.titleMedium),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              onTap: () {
+                _searchController.text = name;
+                _performSearch(name);
+                setState(() {});
+              },
+            ),
+          );
+        }),
+      ],
     );
   }
 
   Widget _buildSearchResults() {
     if (_isSearching) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
 
     if (_filteredResults.isEmpty && _searchResults.isNotEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.filter_list, size: 60, color: Colors.grey.shade400),
-            const SizedBox(height: 16),
-            const Text(
-              'No medicines match your filters',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try adjusting your search criteria',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-          ],
-        ),
+      return _buildEmptyResultState(
+        icon: Icons.filter_list_outlined,
+        title: 'No medicines match your filters',
+        subtitle: 'Try adjusting category or price range',
       );
     }
 
     if (_filteredResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.medical_information_outlined,
-              size: 60,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'No medicines found',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try searching with different keywords',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-          ],
-        ),
+      return _buildEmptyResultState(
+        icon: Icons.medical_information_outlined,
+        title: 'No medicines found',
+        subtitle: 'Try a different name or spelling',
       );
     }
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: _filteredResults.length,
       itemBuilder: (context, index) {
         return _buildMedicineResultCard(_filteredResults[index]);
@@ -387,17 +472,43 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     );
   }
 
+  Widget _buildEmptyResultState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 56, color: AppColors.textMuted),
+            const SizedBox(height: 16),
+            Text(title, style: AppTextStyles.headlineSmall),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: AppTextStyles.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMedicineResultCard(Map<String, dynamic> medicine) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: () => _navigateToMedicineDetails(medicine),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Name and Category
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -407,110 +518,52 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                       children: [
                         Text(
                           medicine['name'] ?? 'Unknown',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTextStyles.headlineSmall,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           medicine['category'] ?? 'General',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
+                          style: AppTextStyles.bodySmall,
                         ),
                       ],
                     ),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                      horizontal: 10,
+                      vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: Colors.green.shade200),
+                      color: AppColors.successLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.success.withOpacity(0.3)),
                     ),
                     child: Text(
                       'PKR ${medicine['price'] ?? 0}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green.shade700,
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.success,
+                        fontSize: 13,
                       ),
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 12),
-
-              // Description
+              const SizedBox(height: 10),
               Text(
                 medicine['description'] ?? 'No description',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade700,
-                  height: 1.4,
-                ),
+                style: AppTextStyles.bodyMedium,
               ),
-
               const SizedBox(height: 12),
-
-              // Dosage and Frequency
               Row(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dosage',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        Text(
-                          medicine['dosage'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Frequency',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        Text(
-                          medicine['frequency'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildMetaChip('Dosage', medicine['dosage'] ?? 'N/A'),
+                  const SizedBox(width: 8),
+                  _buildMetaChip('Frequency', medicine['frequency'] ?? 'N/A'),
                 ],
               ),
-
-              const SizedBox(height: 12),
-
-              // Action Buttons
+              const SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
@@ -519,6 +572,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                       icon: const Icon(Icons.info_outline, size: 18),
                       label: const Text('Details'),
                       style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 44),
                         padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                     ),
@@ -530,8 +584,9 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                       icon: const Icon(Icons.add_shopping_cart, size: 18),
                       label: const Text('Add'),
                       style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 44),
                         padding: const EdgeInsets.symmetric(vertical: 10),
-                        backgroundColor: Colors.blue.shade700,
+                        backgroundColor: AppColors.primary,
                       ),
                     ),
                   ),
@@ -539,6 +594,31 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetaChip(String label, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.borderLight,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: AppTextStyles.labelMedium),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: AppTextStyles.labelLarge.copyWith(fontSize: 13),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );
@@ -559,8 +639,9 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.danger,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
