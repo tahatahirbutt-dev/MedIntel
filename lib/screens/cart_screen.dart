@@ -49,44 +49,27 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // ── Header ────────────────────────
-          SliverToBoxAdapter(child: _buildHeader()),
-
-          // ── Content ────────────────────────
-          if (_cartItems.isEmpty)
-            SliverFillRemaining(child: _buildEmptyCart())
-          else
-            SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Cart Items List
-                  ...List.generate(
-                    _cartItems.length,
-                    (index) => _buildCartItemCard(_cartItems[index], index),
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: _cartItems.isEmpty
+                ? _buildEmptyCart()
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      for (int i = 0; i < _cartItems.length; i++)
+                        _buildCartItemCard(_cartItems[i], i),
+                      const SizedBox(height: 20),
+                      _buildSummarySection(),
+                      const SizedBox(height: 20),
+                      _buildTermsCheckbox(),
+                      const SizedBox(height: 20),
+                      _buildCheckoutButton(),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Summary Section
-                  _buildSummarySection(),
-
-                  const SizedBox(height: 20),
-
-                  // Terms & Conditions
-                  _buildTermsCheckbox(),
-
-                  const SizedBox(height: 20),
-
-                  // Checkout Button
-                  _buildCheckoutButton(),
-
-                  const SizedBox(height: 20),
-                ]),
-              ),
-            ),
+          ),
         ],
       ),
     );
@@ -434,10 +417,14 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   void _proceedToCheckout() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CheckoutScreen()),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CheckoutScreen()),
+        );
+      }
+    });
   }
 
   Widget _buildHeader() {

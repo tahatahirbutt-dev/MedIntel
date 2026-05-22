@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:med_intel/models/pharmacy.dart';
 import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/theme/app_theme.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({Key? key}) : super(key: key);
+  const CheckoutScreen({super.key});
 
   @override
   _CheckoutScreenState createState() => _CheckoutScreenState();
@@ -229,7 +230,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         const SizedBox(height: 12),
         ..._nearbyPharmacies.map((pharmacy) {
           return _buildPharmacyOption(pharmacy);
-        }).toList(),
+        }),
       ],
     );
   }
@@ -395,10 +396,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildConfirmationStep() {
-    final selectedPharmacy = _nearbyPharmacies
-        .firstWhere((p) => p.id == _selectedPharmacy, orElse: () {
-      return _nearbyPharmacies.first;
-    });
+    if (_nearbyPharmacies.isEmpty) {
+      return const Center(child: Text('No pharmacies available'));
+    }
+
+    final selectedPharmacy = _nearbyPharmacies.firstWhere(
+      (p) => p.id == _selectedPharmacy,
+      orElse: () => _nearbyPharmacies.first,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
