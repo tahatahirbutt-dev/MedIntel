@@ -412,6 +412,34 @@ class MockDataService {
     },
   ];
 
+  static final List<Map<String, dynamic>> mockMedicineSchedules = [
+    {
+      'id': 'sched_001',
+      'medicine': 'Panadol',
+      'dosage': '500mg',
+      'times': ['9:00 AM', '1:00 PM', '6:00 PM'],
+      'status': ['taken', 'missed', 'upcoming'],
+      'remainingDays': 7,
+      'nextDose': '1:00 PM',
+      'missedCount': 1,
+    },
+    {
+      'id': 'sched_002',
+      'medicine': 'Metformin',
+      'dosage': '500mg',
+      'times': ['8:00 AM', '8:00 PM'],
+      'status': ['taken', 'upcoming'],
+      'remainingDays': 14,
+      'nextDose': '8:00 PM',
+      'missedCount': 0,
+    },
+  ];
+
+  static Future<List<Map<String, dynamic>>> getMedicineSchedules() async {
+    await Future.delayed(const Duration(milliseconds: 350));
+    return mockMedicineSchedules;
+  }
+
   // ======================== NOTIFICATIONS ========================
 
   static final List<Map<String, dynamic>> mockNotifications = [

@@ -4,11 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:med_intel/screens/medicalprofilescreen.dart';
 import 'package:med_intel/screens/order_history_screen.dart';
+import 'package:med_intel/screens/settings_screen.dart';
 import 'package:med_intel/screens/auth_wrapper.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
@@ -292,7 +293,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.settings,
             'Settings',
             Colors.orange,
-            () {},
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
         ),
       ],

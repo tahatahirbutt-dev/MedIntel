@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:med_intel/screens/upload_screen.dart';
+import 'package:med_intel/screens/home_screen.dart';
 import 'package:med_intel/screens/medicine_search_screen.dart';
 import 'package:med_intel/screens/pharmacyscreen.dart';
 import 'package:med_intel/screens/notificationsscreen.dart';
 import 'package:med_intel/screens/profilescreen.dart';
-import 'package:med_intel/screens/cart_screen.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -21,41 +19,22 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final User? _user = FirebaseAuth.instance.currentUser;
 
   late final List<Widget> _screens = [
-    UploadScreen(onOpenMedicineSearch: () => _onItemTapped(1)),
+    const HomeScreen(),
     const MedicineSearchScreen(embeddedInNav: true),
     PharmacyScreen(medicineIds: const []),
-    const CartScreen(),
     const NotificationsScreen(),
     const ProfileScreen(),
   ];
 
   final List<_NavItem> _navItems = const [
-    _NavItem(Icons.document_scanner_outlined, Icons.document_scanner, 'Scan'),
+    _NavItem(Icons.home_outlined, Icons.home, 'Home'),
     _NavItem(Icons.medication_outlined, Icons.medication, 'Search'),
     _NavItem(Icons.local_pharmacy_outlined, Icons.local_pharmacy, 'Pharmacy'),
-    _NavItem(Icons.shopping_cart_outlined, Icons.shopping_cart, 'Cart'),
     _NavItem(Icons.notifications_outlined, Icons.notifications, 'Alerts'),
     _NavItem(Icons.person_outline, Icons.person, 'Profile'),
   ];
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
-
-  Future<void> _openCamera() async {
-    try {
-      final XFile? photo = await ImagePicker().pickImage(
-        source: ImageSource.camera,
-        imageQuality: 90,
-      );
-      if (photo != null && mounted) {
-        setState(() => _selectedIndex = 0);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Camera error: $e')));
-    }
-  }
 
   String get _initials {
     final name = _user?.displayName ?? '';
@@ -70,21 +49,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: IndexedStack(index: _selectedIndex, children: _screens),
-
-      // Show FAB only on Scan tab (index 0)
-      floatingActionButton: _selectedIndex == 0 ? _buildFAB() : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
       bottomNavigationBar: _buildBottomBar(),
-    );
-  }
-
-  Widget _buildFAB() {
-    return FloatingActionButton(
-      onPressed: _openCamera,
-      backgroundColor: AppColors.primary,
-      elevation: 2,
-      child: const Icon(Icons.camera_alt_rounded, color: Colors.white),
     );
   }
 
