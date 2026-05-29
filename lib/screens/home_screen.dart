@@ -414,7 +414,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _InsightSection extends StatelessWidget {
-  const _InsightSection({super.key});
+  const _InsightSection();
 
   @override
   Widget build(BuildContext context) {
@@ -465,7 +465,7 @@ class _InsightSection extends StatelessWidget {
 
 class _InsightCard extends StatelessWidget {
   final Map<String, dynamic> insight;
-  const _InsightCard({required this.insight, super.key});
+  const _InsightCard({required this.insight});
 
   @override
   Widget build(BuildContext context) {

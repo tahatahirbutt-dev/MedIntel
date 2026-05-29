@@ -14,11 +14,16 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
-        freeCompilerArgs = listOf("-Xno-param-assertions", "-Xno-call-assertions")
+        freeCompilerArgs = listOf(
+          "-Xno-param-assertions",
+          "-Xno-call-assertions",
+          "-Xlint:-options"
+        )
     }
 
     defaultConfig {
@@ -42,6 +47,9 @@ android {
 }
 
 dependencies {
+    // Core library desugaring for Java 8+ features
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
     // Import the Firebase BOM
     implementation(platform("com.google.firebase:firebase-bom:34.8.0"))
 
@@ -50,7 +58,7 @@ dependencies {
     // implementation("com.google.firebase:firebase-auth")
     // implementation("com.google.firebase:firebase-firestore")
     // implementation("com.google.firebase:firebase-storage")
-    // implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-messaging")
     // Add more Firebase products as needed
 }
 

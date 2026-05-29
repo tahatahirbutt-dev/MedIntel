@@ -65,6 +65,13 @@
     "**/.idea": true,
     "**/.next": true
   },
+  "files.exclude": {
+    "**/build": true,
+    "**/.dart_tool": true,
+    "**/.gradle": true,
+    "**/.git": true,
+    "**/.idea": true
+  },
   "extensions.ignoreRecommendations": true,
   "workbench.enableExperiments": false,
   "workbench.settings.openDefaultSettings": false,

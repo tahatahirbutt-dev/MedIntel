@@ -36,14 +36,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
 
-  String get _initials {
-    final name = _user?.displayName ?? '';
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    return parts[0][0].toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

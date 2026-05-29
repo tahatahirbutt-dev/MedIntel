@@ -54,7 +54,7 @@ class HealthInsightsScreen extends StatelessWidget {
 
 class _HealthTipCard extends StatelessWidget {
   final Map<String, dynamic> insight;
-  const _HealthTipCard({required this.insight, super.key});
+  const _HealthTipCard({required this.insight});
 
   @override
   Widget build(BuildContext context) {
