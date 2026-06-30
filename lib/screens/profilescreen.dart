@@ -104,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     // Deep Teal to Blue gradient matching your Medical Profile screenshot
-                    colors: [Color(0xFF0E7490), Color(0xFF0369A1)],
+                    colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
                   ),
                 ),
                 child: SafeArea(
@@ -114,24 +114,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       bottom: 16,
                       right: 20,
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        const Text(
-                          'My Profile',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        Transform.translate(
+                          offset: const Offset(0, 30),
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.person_outline_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Manage your personal information',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.8),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'My Profile',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Manage your personal information',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],

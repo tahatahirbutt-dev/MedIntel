@@ -23,7 +23,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
   bool _isSearching = false;
   String _selectedCategory = 'All';
   double _priceRangeMax = 1000;
-  List<String> _searchHistory = ['Amoxicillin', 'Metformin', 'Ibuprofen'];
+  final List<String> _searchHistory = ['Amoxicillin', 'Metformin', 'Ibuprofen'];
 
   final List<String> _categories = [
     'All',
@@ -161,7 +161,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0E7490), Color(0xFF2563EB)],
+          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
         ),
       ),
       padding: EdgeInsets.fromLTRB(20, widget.embeddedInNav ? 54 : 48, 20, 20),
