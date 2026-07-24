@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:med_intel/screens/home_screen.dart';
 import 'package:med_intel/screens/medicine_search_screen.dart';
-import 'package:med_intel/screens/pharmacyscreen.dart';
 import 'package:med_intel/screens/notificationsscreen.dart';
 import 'package:med_intel/screens/profilescreen.dart';
+import 'package:med_intel/screens/upload_screen.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -21,7 +21,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late final List<Widget> _screens = [
     const HomeScreen(),
     const MedicineSearchScreen(embeddedInNav: true),
-    PharmacyScreen(medicineIds: const []),
+    const UploadScreen(),
     const NotificationsScreen(),
     const ProfileScreen(),
   ];
@@ -29,7 +29,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<_NavItem> _navItems = const [
     _NavItem(Icons.home_outlined, Icons.home, 'Home'),
     _NavItem(Icons.medication_outlined, Icons.medication, 'Search'),
-    _NavItem(Icons.local_pharmacy_outlined, Icons.local_pharmacy, 'Pharmacy'),
+    _NavItem(
+      Icons.document_scanner_outlined,
+      Icons.document_scanner,
+      'Scan prescription',
+    ),
     _NavItem(Icons.notifications_outlined, Icons.notifications, 'Alerts'),
     _NavItem(Icons.person_outline, Icons.person, 'Profile'),
   ];
