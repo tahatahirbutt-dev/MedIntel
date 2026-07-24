@@ -38,9 +38,12 @@ class AppNavigation {
               ResultsScreen(prescription: args.prescription, imagePath: ''),
         );
       case pharmacy:
-        final args = settings.arguments as PharmacyScreenArgs;
+        final args = settings.arguments;
+        final medicineIds = args is PharmacyScreenArgs
+            ? args.medicineIds
+            : <String>[];
         return MaterialPageRoute(
-          builder: (_) => PharmacyScreen(medicineIds: args.medicineIds),
+          builder: (_) => PharmacyScreen(medicineIds: medicineIds),
         );
       case profile:
         return MaterialPageRoute(builder: (_) => ProfileScreen());

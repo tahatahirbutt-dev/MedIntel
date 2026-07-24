@@ -310,17 +310,44 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ],
               ),
               GestureDetector(
-                onTap: () => _deleteSchedule(schedule.id),
+                onTap: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Remove schedule'),
+                      content: const Text(
+                        'Do you want to remove this schedule completely?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            'Remove',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    _deleteSchedule(schedule.id);
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.dangerLight,
+                    color: Colors.red.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(
-                    Icons.delete_outline,
+                    Icons.close,
                     size: 20,
-                    color: AppColors.danger,
+                    color: Colors.red,
                   ),
                 ),
               ),

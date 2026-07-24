@@ -1,4 +1,8 @@
+// import 'dart:convert';
+
 import 'package:flutter/material.dart';
+// import 'package:geolocator/geolocator.dart';
+// import 'package:http/http.dart' as http;
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -33,6 +37,9 @@ class _PharmacyScreenState extends State<PharmacyScreen>
   late Map<String, bool> _medicineAvailability;
 
   bool _isLoading = true;
+  // bool _isNearbySearchLoading = false;
+  // final List<Map<String, dynamic>> _nearbyPharmacies = [];
+  // static const String _googleMapsApiKey = '<YOUR_GOOGLE_MAPS_API_KEY>';
   late final AnimationController _anim;
 
   // Adjustable header layout values — tweak these to move the logo/text.
@@ -178,6 +185,8 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   _buildSectionHeader('Register Your Pharmacy'),
                   const SizedBox(height: 12),
                   _buildRegisterButton(),
+                  const SizedBox(height: 16),
+                  // _buildNearbyPharmacySearchButton(),
                   const SizedBox(height: 28),
 
                   // ── SECTION 3: Registered Pharmacies ──
@@ -574,6 +583,233 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       ),
     );
   }
+
+  // Widget _buildNearbyPharmacySearchButton() {
+  //   return Material(
+  //     color: AppColors.secondaryLight,
+  //     borderRadius: BorderRadius.circular(14),
+  //     child: InkWell(
+  //       borderRadius: BorderRadius.circular(14),
+  //       onTap: _isNearbySearchLoading ? null : _scanNearbyPharmacies,
+  //       child: Container(
+  //         padding: const EdgeInsets.all(12),
+  //         child: Row(
+  //           children: [
+  //             Container(
+  //               width: 44,
+  //               height: 44,
+  //               decoration: BoxDecoration(
+  //                 color: AppColors.secondary.withOpacity(0.1),
+  //                 borderRadius: BorderRadius.circular(10),
+  //               ),
+  //               child: _isNearbySearchLoading
+  //                   ? const Center(
+  //                       child: SizedBox(
+  //                         width: 20,
+  //                         height: 20,
+  //                         child: CircularProgressIndicator(strokeWidth: 2.2),
+  //                       ),
+  //                     )
+  //                   : const Icon(
+  //                       Icons.search,
+  //                       color: AppColors.secondary,
+  //                       size: 22,
+  //                     ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Text(
+  //                     'Find nearby pharmacies',
+  //                     style: AppTextStyles.titleMedium,
+  //                   ),
+  //                   Text(
+  //                     'Search within 5 km of your current location',
+  //                     style: AppTextStyles.bodySmall,
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             const SizedBox(width: 8),
+  //             const Icon(Icons.chevron_right, color: AppColors.secondary),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  // Future<void> _scanNearbyPharmacies() async {
+  //   setState(() {
+  //     _isNearbySearchLoading = true;
+  //   });
+
+  //   try {
+  //     final position = await _getCurrentLocation();
+  //     final uri =
+  //         Uri.parse('https://places.googleapis.com/v1/nearbySearch');
+  //     final response = await http.post(
+  //       uri,
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'X-Goog-Api-Key': _googleMapsApiKey,
+  //         'X-Goog-FieldMask':
+  //             'places.displayName,places.formattedAddress,places.location',
+  //       },
+  //       body: jsonEncode({
+  //         'includedTypes': ['pharmacy'],
+  //         'maxResultCount': 20,
+  //         'locationRestriction': {
+  //           'circle': {
+  //             'center': {
+  //               'latitude': position.latitude,
+  //               'longitude': position.longitude,
+  //             },
+  //             'radius': 5000.0,
+  //           },
+  //         },
+  //       }),
+  //     );
+
+  //     if (response.statusCode != 200) {
+  //       throw 'Failed to fetch nearby pharmacies: ${response.statusCode} ${response.reasonPhrase}';
+  //     }
+
+  //     final body = jsonDecode(response.body) as Map<String, dynamic>;
+  //     final rawPlaces = (body['places'] as List<dynamic>?) ?? [];
+  //     _nearbyPharmacies.clear();
+  //     _nearbyPharmacies.addAll(rawPlaces
+  //         .whereType<Map<String, dynamic>>()
+  //         .toList());
+
+  //     if (mounted) {
+  //       _showNearbyPharmaciesSheet();
+  //     }
+  //   } catch (error) {
+  //     if (!mounted) return;
+  //     final message = error is String ? error : error.toString();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text(message)),
+  //     );
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         _isNearbySearchLoading = false;
+  //       });
+  //     }
+  //   }
+  // }
+
+  // Future<Position> _getCurrentLocation() async {
+  //   final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  //   if (!serviceEnabled) {
+  //     throw 'Location services are disabled. Please enable location services and try again.';
+  //   }
+
+  //   var permission = await Geolocator.checkPermission();
+  //   if (permission == LocationPermission.denied) {
+  //     permission = await Geolocator.requestPermission();
+  //     if (permission == LocationPermission.denied) {
+  //       throw 'Location permission denied. Please allow location access.';
+  //     }
+  //   }
+
+  //   if (permission == LocationPermission.deniedForever) {
+  //     throw 'Location permission permanently denied. Open app settings and allow location access.';
+  //   }
+
+  //   return Geolocator.getCurrentPosition(
+  //     desiredAccuracy: LocationAccuracy.high,
+  //   );
+  // }
+
+  // void _showNearbyPharmaciesSheet() {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     builder: (context) {
+  //       return SafeArea(
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             const SizedBox(height: 16),
+  //             Container(
+  //               width: 40,
+  //               height: 4,
+  //               decoration: BoxDecoration(
+  //                 color: Colors.grey.shade400,
+  //                 borderRadius: BorderRadius.circular(2),
+  //               ),
+  //             ),
+  //             const SizedBox(height: 16),
+  //             Padding(
+  //               padding: const EdgeInsets.symmetric(horizontal: 20),
+  //               child: Row(
+  //                 children: [
+  //                   const Icon(Icons.local_pharmacy, color: Colors.blue),
+  //                   const SizedBox(width: 12),
+  //                   const Text(
+  //                     'Nearby pharmacies',
+  //                     style: TextStyle(
+  //                       fontSize: 18,
+  //                       fontWeight: FontWeight.w600,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //             const SizedBox(height: 14),
+  //             if (_nearbyPharmacies.isEmpty)
+  //               const Padding(
+  //                 padding: EdgeInsets.all(20),
+  //                 child: Text('No pharmacies found within 5 km.'),
+  //               )
+  //             else
+  //               Flexible(
+  //                 child: ListView.separated(
+  //                   shrinkWrap: true,
+  //                   padding: const EdgeInsets.symmetric(
+  //                       horizontal: 20, vertical: 8),
+  //                   itemCount: _nearbyPharmacies.length,
+  //                   separatorBuilder: (_, __) => const Divider(height: 1),
+  //                   itemBuilder: (context, index) {
+  //                     final place = _nearbyPharmacies[index];
+  //                     final name = _extractDisplayName(place);
+  //                     final address = place['formattedAddress'] as String? ??
+  //                         'No address available';
+  //                     return ListTile(
+  //                       leading: const Icon(
+  //                         Icons.local_pharmacy_outlined,
+  //                         color: Colors.teal,
+  //                       ),
+  //                       title: Text(name),
+  //                       subtitle: Text(address),
+  //                     );
+  //                   },
+  //                 ),
+  //               ),
+  //             const SizedBox(height: 20),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
+
+  // String _extractDisplayName(Map<String, dynamic> place) {
+  //   final displayName = place['displayName'];
+  //   if (displayName is String) {
+  //     return displayName;
+  //   }
+  //   if (displayName is Map<String, dynamic>) {
+  //     return displayName['text'] as String? ?? 'Unknown Pharmacy';
+  //   }
+  //   return 'Unknown Pharmacy';
+  // }
 
   Widget _buildAvailabilitySection() {
     return Container(

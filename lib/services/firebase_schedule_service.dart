@@ -220,6 +220,7 @@ class FirebaseScheduleService {
         .collection('users')
         .doc(_userId)
         .collection('scheduled_doses')
+        .where('isTaken', isEqualTo: false)
         .where('scheduledTime', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
         .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
         .orderBy('scheduledTime')
@@ -252,6 +253,120 @@ class FirebaseScheduleService {
       }));
 
       return todaysDoses.whereType<Map<String, dynamic>>().toList();
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> getAllTodaysDosesStream(DateTime date) {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+
+    return _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection('scheduled_doses')
+        .where(
+          'scheduledTime',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+        )
+        .where('scheduledTime', isLessThan: Timestamp.fromDate(endOfDay))
+        .orderBy('scheduledTime')
+        .snapshots()
+        .asyncMap((snapshot) async {
+          final todaysDoses = await Future.wait(
+            snapshot.docs.map((doc) async {
+              final dose = ScheduledDose.fromMap(doc.id, doc.data());
+              final scheduleDoc = await _firestore
+                  .collection('users')
+                  .doc(_userId)
+                  .collection('medicine_schedules')
+                  .doc(dose.scheduleId)
+                  .get();
+
+              if (!scheduleDoc.exists) {
+                return null;
+              }
+
+              final schedule = MedicineSchedule.fromMap(
+                scheduleDoc.id,
+                scheduleDoc.data()!,
+              );
+              return {
+                'id': doc.id,
+                'scheduleId': dose.scheduleId,
+                'medicineName': schedule.medicineName,
+                'dosage': schedule.dosage,
+                'scheduledTime': dose.scheduledTime,
+                'isTaken': dose.isTaken,
+                'takenAt': dose.takenAt,
+                'time':
+                    '${dose.scheduledTime.hour.toString().padLeft(2, '0')}:${dose.scheduledTime.minute.toString().padLeft(2, '0')}',
+              };
+            }),
+          );
+
+          return todaysDoses.whereType<Map<String, dynamic>>().toList();
+        });
+  }
+
+  /// Stream upcoming doses from now onwards, ordered by scheduledTime.
+  /// Optional [limit] restricts number of results returned by the query.
+  Stream<List<Map<String, dynamic>>> getUpcomingDosesStream({int limit = 5}) {
+    final now = DateTime.now();
+
+    var query = _firestore
+        .collection('users')
+        .doc(_userId)
+        .collection('scheduled_doses')
+        .where(
+          'scheduledTime',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(
+            now.subtract(const Duration(minutes: 5)),
+          ),
+        )
+        .orderBy('scheduledTime')
+        .limit(30);
+
+    return query.snapshots().asyncMap((snapshot) async {
+      final upcoming = await Future.wait(
+        snapshot.docs.map((doc) async {
+          final dose = ScheduledDose.fromMap(doc.id, doc.data());
+          if (dose.isTaken) return null;
+
+          final scheduleDoc = await _firestore
+              .collection('users')
+              .doc(_userId)
+              .collection('medicine_schedules')
+              .doc(dose.scheduleId)
+              .get();
+
+          if (!scheduleDoc.exists) return null;
+
+          final schedule = MedicineSchedule.fromMap(
+            scheduleDoc.id,
+            scheduleDoc.data()!,
+          );
+          return {
+            'id': doc.id,
+            'scheduleId': dose.scheduleId,
+            'medicineName': schedule.medicineName,
+            'dosage': schedule.dosage,
+            'scheduledTime': dose.scheduledTime,
+            'isTaken': dose.isTaken,
+            'takenAt': dose.takenAt,
+            'time':
+                '${dose.scheduledTime.hour.toString().padLeft(2, '0')}:${dose.scheduledTime.minute.toString().padLeft(2, '0')}',
+          };
+        }),
+      );
+
+      final filtered = upcoming.whereType<Map<String, dynamic>>().toList()
+        ..sort((a, b) {
+          return (a['scheduledTime'] as DateTime).compareTo(
+            b['scheduledTime'] as DateTime,
+          );
+        });
+
+      return filtered.take(limit).toList();
     });
   }
 }
