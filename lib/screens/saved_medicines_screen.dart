@@ -1,0 +1,224 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
+import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/providers/saved_medicines_provider.dart';
+import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
+
+class SavedMedicinesScreen extends StatelessWidget {
+  const SavedMedicinesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final saved = context.watch<SavedMedicinesProvider>();
+    final items = saved.items;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          _buildHeader(items.length),
+          Expanded(
+            child: items.isEmpty
+                ? _buildEmptyState(context)
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) =>
+                        _buildSavedCard(context, items[index]),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(int itemCount) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 56, 20, 28),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.bookmark_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Saved Medicines',
+                  style: TextStyle(
+                    fontFamily: 'Outfit',
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  '$itemCount item${itemCount != 1 ? 's' : ''}',
+                  style: TextStyle(
+                    fontFamily: 'DM Sans',
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.borderLight,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.bookmark_border,
+              size: 60,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text('No saved medicines', style: AppTextStyles.headlineMedium),
+          const SizedBox(height: 8),
+          Text(
+            'Tap the bookmark icon on a medicine to save it here',
+            style: AppTextStyles.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          AppPrimaryButton(
+            label: 'Browse Medicines',
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSavedCard(BuildContext context, Map<String, dynamic> medicine) {
+    final id = medicine['id']?.toString() ?? '';
+    final price = (medicine['price'] as num?)?.toDouble() ?? 0.0;
+    final dosage = medicine['dosage']?.toString() ?? 'N/A';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      medicine['name']?.toString() ?? 'Unknown',
+                      style: AppTextStyles.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Dosage: $dosage', style: AppTextStyles.bodySmall),
+                    const SizedBox(height: 4),
+                    Text(
+                      'PKR ${price.toStringAsFixed(0)}',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.bookmark_remove_outlined),
+                color: AppColors.danger,
+                onPressed: () =>
+                    context.read<SavedMedicinesProvider>().remove(id),
+                splashRadius: 24,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    AppNavigation.medicineDetails,
+                    arguments: {
+                      'medicineId': id,
+                      'medicineName': medicine['name'],
+                    },
+                  ),
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  label: const Text('Details'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    context.read<CartProvider>().addItem(
+                      id: id,
+                      name: medicine['name']?.toString() ?? 'Unknown',
+                      price: price,
+                      dosage: dosage,
+                    );
+                    showAppSnackBar(
+                      context,
+                      '${medicine['name']} added to cart',
+                    );
+                  },
+                  icon: const Icon(Icons.add_shopping_cart, size: 18),
+                  label: const Text('Add'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    backgroundColor: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

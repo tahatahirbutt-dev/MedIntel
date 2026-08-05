@@ -1,11 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:med_intel/models/medicine_schedule.dart';
+import 'package:med_intel/services/notification_service.dart';
 
 class FirebaseScheduleService {
   static final FirebaseScheduleService _instance = FirebaseScheduleService._internal();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final NotificationService _notifications = NotificationService();
+
+  /// Caps how many exact-time notifications get scheduled per call, since
+  /// iOS silently drops pending local notifications past ~64.
+  static const int _maxScheduledNotifications = 60;
 
   factory FirebaseScheduleService() {
     return _instance;
@@ -41,6 +48,7 @@ class FirebaseScheduleService {
 
   Future<void> _createScheduledDoses(String scheduleId, MedicineSchedule schedule) async {
     final batch = _firestore.batch();
+    final scheduledDoses = <ScheduledDose>[];
 
     for (int day = 0; day < schedule.durationDays; day++) {
       final date = schedule.startDate.add(Duration(days: day));
@@ -55,24 +63,50 @@ class FirebaseScheduleService {
           int.parse(timeParts[1]),
         );
 
-        final dose = ScheduledDose(
-          id: '',
-          scheduleId: scheduleId,
-          userId: _userId,
-          scheduledTime: scheduledTime,
-        );
-
         final docRef = _firestore
             .collection('users')
             .doc(_userId)
             .collection('scheduled_doses')
             .doc();
 
+        final dose = ScheduledDose(
+          id: docRef.id,
+          scheduleId: scheduleId,
+          userId: _userId,
+          scheduledTime: scheduledTime,
+        );
+
         batch.set(docRef, dose.toMap());
+        scheduledDoses.add(dose);
       }
     }
 
     await batch.commit();
+    await _scheduleDoseNotifications(schedule, scheduledDoses);
+  }
+
+  Future<void> _scheduleDoseNotifications(
+    MedicineSchedule schedule,
+    List<ScheduledDose> doses,
+  ) async {
+    final upcoming = doses
+        .where((dose) => dose.scheduledTime.isAfter(DateTime.now()))
+        .toList()
+      ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
+    for (final dose in upcoming.take(_maxScheduledNotifications)) {
+      try {
+        await _notifications.scheduleDoseReminder(
+          id: NotificationService.doseNotificationId(dose.id),
+          title: 'Time for ${schedule.medicineName}',
+          body: 'Take ${schedule.dosage} now',
+          scheduledTime: dose.scheduledTime,
+          payload: dose.id,
+        );
+      } catch (e) {
+        debugPrint('Error scheduling dose notification for ${dose.id}: $e');
+      }
+    }
   }
 
   Future<List<MedicineSchedule>> getActiveSchedules() async {
@@ -150,6 +184,7 @@ class FirebaseScheduleService {
             'isTaken': true,
             'takenAt': Timestamp.fromDate(DateTime.now()),
           });
+      await _notifications.cancel(NotificationService.doseNotificationId(doseId));
     } catch (e) {
       throw Exception('Error marking dose as taken: $e');
     }
@@ -192,6 +227,9 @@ class FirebaseScheduleService {
       }
 
       await batch.commit();
+      await _notifications.cancelAll(
+        dosesSnapshot.docs.map((doc) => NotificationService.doseNotificationId(doc.id)),
+      );
     } catch (e) {
       throw Exception('Error deleting schedule: $e');
     }
@@ -368,5 +406,56 @@ class FirebaseScheduleService {
 
       return filtered.take(limit).toList();
     });
+  }
+
+  /// Re-schedules local notifications for every untaken, still-upcoming dose.
+  /// Safe to call repeatedly (re-scheduling with the same id just replaces
+  /// the pending alarm). Intended as a startup safety net so doses created
+  /// before notification scheduling existed, or lost after e.g. a device
+  /// reboot with alarms not yet re-armed, still get their reminder.
+  Future<void> resyncNotifications() async {
+    try {
+      final now = DateTime.now();
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(_userId)
+          .collection('scheduled_doses')
+          .where('isTaken', isEqualTo: false)
+          .where('scheduledTime', isGreaterThan: Timestamp.fromDate(now))
+          .get();
+
+      final scheduleCache = <String, MedicineSchedule>{};
+
+      for (final doc in snapshot.docs) {
+        final dose = ScheduledDose.fromMap(doc.id, doc.data());
+
+        var schedule = scheduleCache[dose.scheduleId];
+        if (schedule == null) {
+          final scheduleDoc = await _firestore
+              .collection('users')
+              .doc(_userId)
+              .collection('medicine_schedules')
+              .doc(dose.scheduleId)
+              .get();
+          if (!scheduleDoc.exists) continue;
+          schedule = MedicineSchedule.fromMap(scheduleDoc.id, scheduleDoc.data()!);
+          scheduleCache[dose.scheduleId] = schedule;
+        }
+
+        try {
+          await _notifications.scheduleDoseReminder(
+            id: NotificationService.doseNotificationId(dose.id),
+            title: 'Time for ${schedule.medicineName}',
+            body: 'Take ${schedule.dosage} now',
+            scheduledTime: dose.scheduledTime,
+            payload: dose.id,
+          );
+        } catch (e) {
+          debugPrint('Error resyncing dose notification for ${dose.id}: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error resyncing notifications: $e');
+    }
   }
 }
