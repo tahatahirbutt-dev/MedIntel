@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:med_intel/providers/medical_profile_provider.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class MedicalProfileScreen extends StatefulWidget {
   const MedicalProfileScreen({Key? key}) : super(key: key);
@@ -12,27 +17,6 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
   final List<String> _conditions = ['Type 2 Diabetes', 'Hypertension'];
   final _allergyCtrl = TextEditingController();
   final _conditionCtrl = TextEditingController();
-
-  final List<Map<String, dynamic>> _history = [
-    {
-      'date': '2024-02-15',
-      'doctor': 'Dr. Ahmed Khan',
-      'diagnosis': 'Upper Respiratory Infection',
-      'medicines': ['Amoxicillin', 'Paracetamol'],
-    },
-    {
-      'date': '2023-12-10',
-      'doctor': 'Dr. Sara Malik',
-      'diagnosis': 'Migraine',
-      'medicines': ['Sumatriptan', 'Ibuprofen'],
-    },
-    {
-      'date': '2023-09-05',
-      'doctor': 'Dr. Rizwan Ali',
-      'diagnosis': 'Allergic Rhinitis',
-      'medicines': ['Loratadine', 'Fluticasone'],
-    },
-  ];
 
   @override
   void dispose() {
@@ -54,6 +38,8 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = context.watch<MedicalProfileProvider>();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -67,7 +53,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.ios_share_outlined, color: Colors.white),
-                onPressed: () {},
+                onPressed: () => _exportProfile(profile),
                 tooltip: 'Export profile',
               ),
             ],
@@ -118,11 +104,11 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ── Vitals Row ───────────────────
-                _buildVitalsRow(),
+                _buildVitalsRow(profile),
                 const SizedBox(height: 20),
 
                 // ── Emergency Contact ────────────
-                _buildEmergencyCard(),
+                _buildEmergencyCard(profile),
                 const SizedBox(height: 20),
 
                 // ── Allergies ────────────────────
@@ -158,7 +144,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                 const SizedBox(height: 20),
 
                 // ── Medical History ──────────────
-                _buildHistorySection(),
+                _buildHistorySection(profile),
               ]),
             ),
           ),
@@ -167,25 +153,28 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     );
   }
 
-  Widget _buildVitalsRow() {
+  Widget _buildVitalsRow(MedicalProfileProvider profile) {
     final vitals = [
       (
+        'bloodType',
         'Blood Type',
-        'O+',
+        profile.bloodType,
         AppColors.danger,
         AppColors.dangerLight,
         Icons.water_drop_outlined,
       ),
       (
+        'height',
         'Height',
-        '5\'10"',
+        profile.height,
         AppColors.primary,
         AppColors.primaryLight,
         Icons.height,
       ),
       (
+        'weight',
         'Weight',
-        '75 kg',
+        profile.weight,
         AppColors.secondary,
         AppColors.secondaryLight,
         Icons.monitor_weight_outlined,
@@ -194,40 +183,49 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     return Row(
       children: vitals.map((v) {
         return Expanded(
-          child: Container(
-            margin: EdgeInsets.only(left: vitals.indexOf(v) > 0 ? 8 : 0),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: v.$5 == Icons.water_drop_outlined
-                        ? AppColors.dangerLight
-                        : v.$5 == Icons.height
-                        ? AppColors.primaryLight
-                        : AppColors.secondaryLight,
-                    borderRadius: BorderRadius.circular(9),
+          child: GestureDetector(
+            onTap: () => _editVital(v.$1, v.$2, v.$3),
+            child: Container(
+              margin: EdgeInsets.only(left: vitals.indexOf(v) > 0 ? 8 : 0),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: v.$5,
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Icon(v.$6, size: 16, color: v.$4),
+                      ),
+                      const Icon(
+                        Icons.edit_outlined,
+                        size: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ],
                   ),
-                  child: Icon(v.$5, size: 16, color: v.$3),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  v.$2,
-                  style: AppTextStyles.headlineMedium.copyWith(
-                    color: v.$3,
-                    fontSize: 18,
+                  const SizedBox(height: 10),
+                  Text(
+                    v.$3,
+                    style: AppTextStyles.headlineMedium.copyWith(
+                      color: v.$4,
+                      fontSize: 18,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(v.$1, style: AppTextStyles.bodySmall),
-              ],
+                  const SizedBox(height: 2),
+                  Text(v.$2, style: AppTextStyles.bodySmall),
+                ],
+              ),
             ),
           ),
         );
@@ -235,7 +233,81 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     );
   }
 
-  Widget _buildEmergencyCard() {
+  void _editVital(String field, String label, String currentValue) {
+    if (field == 'bloodType') {
+      _showBloodTypePicker(currentValue);
+      return;
+    }
+
+    final ctrl = TextEditingController(text: currentValue);
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Edit $label'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: field == 'height' ? "e.g. 5'10\"" : 'e.g. 75 kg',
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = ctrl.text.trim();
+              if (value.isEmpty) return;
+              final profile = context.read<MedicalProfileProvider>();
+              if (field == 'height') {
+                profile.updateVitals(height: value);
+              } else {
+                profile.updateVitals(weight: value);
+              }
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBloodTypePicker(String currentValue) {
+    const types = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: types
+              .map(
+                (t) => ListTile(
+                  title: Text(t),
+                  trailing: t == currentValue
+                      ? const Icon(Icons.check, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    context.read<MedicalProfileProvider>().updateVitals(
+                      bloodType: t,
+                    );
+                    Navigator.pop(sheetContext);
+                  },
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmergencyCard(MedicalProfileProvider profile) {
+    final initial = profile.emergencyName.isNotEmpty
+        ? profile.emergencyName[0].toUpperCase()
+        : '?';
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -265,7 +337,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                 Text('Emergency contact', style: AppTextStyles.headlineSmall),
                 const Spacer(),
                 TextButton.icon(
-                  onPressed: () {},
+                  onPressed: () => _editEmergencyContact(profile),
                   icon: const Icon(Icons.edit_outlined, size: 14),
                   label: const Text('Edit'),
                   style: TextButton.styleFrom(
@@ -285,7 +357,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                   radius: 22,
                   backgroundColor: AppColors.primaryLight,
                   child: Text(
-                    'A',
+                    initial,
                     style: AppTextStyles.titleMedium.copyWith(
                       color: AppColors.primary,
                     ),
@@ -295,9 +367,15 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Abdullah Shakeel', style: AppTextStyles.titleMedium),
+                    Text(
+                      profile.emergencyName,
+                      style: AppTextStyles.titleMedium,
+                    ),
                     const SizedBox(height: 2),
-                    Text('+92 321 9876543', style: AppTextStyles.bodyMedium),
+                    Text(
+                      profile.emergencyPhone,
+                      style: AppTextStyles.bodyMedium,
+                    ),
                   ],
                 ),
                 const Spacer(),
@@ -312,7 +390,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                       color: AppColors.success,
                       size: 18,
                     ),
-                    onPressed: () {},
+                    onPressed: () => _makePhoneCall(profile.emergencyPhone),
                   ),
                 ),
               ],
@@ -321,6 +399,69 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
         ],
       ),
     );
+  }
+
+  void _editEmergencyContact(MedicalProfileProvider profile) {
+    final nameCtrl = TextEditingController(text: profile.emergencyName);
+    final phoneCtrl = TextEditingController(text: profile.emergencyPhone);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit emergency contact'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Phone number',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              final phone = phoneCtrl.text.trim();
+              if (name.isEmpty || phone.isEmpty) return;
+              context.read<MedicalProfileProvider>().updateEmergencyContact(
+                name: name,
+                phone: phone,
+              );
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _makePhoneCall(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    try {
+      await launchUrl(uri);
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnackBar(context, 'Could not make call');
+    }
   }
 
   Widget _buildTagSection({
@@ -496,22 +637,58 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     );
   }
 
-  Widget _buildHistorySection() {
+  Widget _buildHistorySection(MedicalProfileProvider profile) {
+    final history = profile.history;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(
-          title: 'Medical history',
-          actionLabel: 'Export all',
-          onAction: () {},
+        Row(
+          children: [
+            Text('Medical history', style: AppTextStyles.headlineSmall),
+            const Spacer(),
+            IconButton(
+              onPressed: () => _showHistoryDialog(),
+              icon: const Icon(Icons.add_circle_outline, size: 20),
+              color: AppColors.primary,
+              tooltip: 'Add record',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 12),
+            TextButton(
+              onPressed: () => _exportHistory(history),
+              child: Text(
+                'Export all',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        ..._history.map(_buildHistoryCard),
+        if (history.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            decoration: BoxDecoration(
+              color: AppColors.borderLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text('No history yet', style: AppTextStyles.bodyMedium),
+            ),
+          )
+        else
+          ...history.asMap().entries.map(
+            (e) => _buildHistoryCard(e.value, e.key),
+          ),
       ],
     );
   }
 
-  Widget _buildHistoryCard(Map<String, dynamic> r) {
+  Widget _buildHistoryCard(Map<String, dynamic> r, int index) {
     final parts = r['date'].split('-');
     final day = parts[2];
     final month = _monthName(parts[1]);
@@ -571,7 +748,40 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(r['diagnosis'], style: AppTextStyles.titleMedium),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            r['diagnosis'],
+                            style: AppTextStyles.titleMedium,
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.more_vert,
+                            size: 18,
+                            color: AppColors.textMuted,
+                          ),
+                          onSelected: (action) {
+                            if (action == 'edit') {
+                              _showHistoryDialog(index: index, existing: r);
+                            } else if (action == 'delete') {
+                              context
+                                  .read<MedicalProfileProvider>()
+                                  .removeHistoryEntry(index);
+                            }
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -636,5 +846,156 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       'Dec',
     ];
     return months[int.parse(m) - 1];
+  }
+
+  void _showHistoryDialog({int? index, Map<String, dynamic>? existing}) {
+    final doctorCtrl = TextEditingController(
+      text: existing?['doctor'] as String? ?? '',
+    );
+    final diagnosisCtrl = TextEditingController(
+      text: existing?['diagnosis'] as String? ?? '',
+    );
+    final medicinesCtrl = TextEditingController(
+      text: existing != null
+          ? (existing['medicines'] as List).join(', ')
+          : '',
+    );
+    DateTime selectedDate = existing != null
+        ? DateTime.tryParse(existing['date'] as String) ?? DateTime.now()
+        : DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(existing == null ? 'Add record' : 'Edit record'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: dialogContext,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(1950),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setDialogState(() => selectedDate = picked);
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Date',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text(
+                      '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: doctorCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Doctor',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: diagnosisCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Diagnosis',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: medicinesCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Medicines (comma separated)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final diagnosis = diagnosisCtrl.text.trim();
+                if (diagnosis.isEmpty) return;
+
+                final entry = {
+                  'date':
+                      '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
+                  'doctor': doctorCtrl.text.trim(),
+                  'diagnosis': diagnosis,
+                  'medicines': medicinesCtrl.text
+                      .split(',')
+                      .map((m) => m.trim())
+                      .where((m) => m.isNotEmpty)
+                      .toList(),
+                };
+
+                final profile = context.read<MedicalProfileProvider>();
+                if (index != null) {
+                  profile.updateHistoryEntry(index, entry);
+                } else {
+                  profile.addHistoryEntry(entry);
+                }
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _exportProfile(MedicalProfileProvider profile) {
+    final buffer = StringBuffer()
+      ..writeln('MedIntel — Medical Profile')
+      ..writeln()
+      ..writeln('Blood Type: ${profile.bloodType}')
+      ..writeln('Height: ${profile.height}')
+      ..writeln('Weight: ${profile.weight}')
+      ..writeln()
+      ..writeln('Allergies: ${_allergies.isEmpty ? 'None' : _allergies.join(', ')}')
+      ..writeln(
+        'Chronic Conditions: ${_conditions.isEmpty ? 'None' : _conditions.join(', ')}',
+      )
+      ..writeln()
+      ..writeln('Emergency Contact: ${profile.emergencyName} (${profile.emergencyPhone})')
+      ..writeln()
+      ..writeln('Medical History:');
+    for (final r in profile.history) {
+      buffer.writeln(
+        '- ${r['date']}: ${r['diagnosis']} (${r['doctor']}) — ${(r['medicines'] as List).join(', ')}',
+      );
+    }
+    buffer.writeln('\nShared via MedIntel');
+
+    Share.share(buffer.toString(), subject: 'Medical Profile');
+  }
+
+  void _exportHistory(List<Map<String, dynamic>> history) {
+    final buffer = StringBuffer()..writeln('MedIntel — Medical History')..writeln();
+    for (final r in history) {
+      buffer.writeln(
+        '- ${r['date']}: ${r['diagnosis']} (${r['doctor']}) — ${(r['medicines'] as List).join(', ')}',
+      );
+    }
+    buffer.writeln('\nShared via MedIntel');
+
+    Share.share(buffer.toString(), subject: 'Medical History');
   }
 }

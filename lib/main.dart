@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/providers/medical_profile_provider.dart';
 import 'package:med_intel/providers/saved_medicines_provider.dart';
 import 'package:med_intel/screens/auth_wrapper.dart';
 import 'package:med_intel/services/fcm_service.dart';
@@ -20,11 +21,14 @@ void main() async {
   await cartProvider.loadFromPrefs();
   final savedMedicinesProvider = SavedMedicinesProvider();
   await savedMedicinesProvider.loadFromPrefs();
+  final medicalProfileProvider = MedicalProfileProvider();
+  await medicalProfileProvider.loadFromPrefs();
 
   runApp(
     MedIntelApp(
       cartProvider: cartProvider,
       savedMedicinesProvider: savedMedicinesProvider,
+      medicalProfileProvider: medicalProfileProvider,
     ),
   );
 }
@@ -32,11 +36,13 @@ void main() async {
 class MedIntelApp extends StatelessWidget {
   final CartProvider cartProvider;
   final SavedMedicinesProvider savedMedicinesProvider;
+  final MedicalProfileProvider medicalProfileProvider;
 
   const MedIntelApp({
     super.key,
     required this.cartProvider,
     required this.savedMedicinesProvider,
+    required this.medicalProfileProvider,
   });
 
   @override
@@ -45,6 +51,7 @@ class MedIntelApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: cartProvider),
         ChangeNotifierProvider.value(value: savedMedicinesProvider),
+        ChangeNotifierProvider.value(value: medicalProfileProvider),
       ],
       child: MaterialApp(
         title: 'Med Intel',

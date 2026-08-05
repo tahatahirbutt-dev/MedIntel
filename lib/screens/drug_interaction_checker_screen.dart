@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class DrugInteractionCheckerScreen extends StatefulWidget {
   final List<String>? initialMedicines;
@@ -198,7 +199,7 @@ class _DrugInteractionCheckerScreenState
               ),
               onPressed: () {
                 Navigator.pop(context);
-                // Navigate to chat with pharmacist or doctor
+                showAppSnackBar(this.context, 'Coming soon');
               },
               child: const Text('Consult Pharmacist'),
             ),
