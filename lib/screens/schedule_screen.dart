@@ -18,6 +18,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
+    _scheduleService.resyncNotifications();
   }
 
   Future<void> _addSchedule(MedicineSchedule schedule) async {

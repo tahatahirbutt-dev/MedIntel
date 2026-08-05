@@ -12,6 +12,7 @@ import 'package:med_intel/screens/medicine_search_screen.dart';
 import 'package:med_intel/screens/cart_screen.dart';
 import 'package:med_intel/screens/checkout_screen.dart';
 import 'package:med_intel/screens/order_history_screen.dart';
+import 'package:med_intel/screens/saved_medicines_screen.dart';
 
 class AppNavigation {
   static const String upload = '/';
@@ -26,6 +27,7 @@ class AppNavigation {
   static const String cart = '/cart';
   static const String checkout = '/checkout';
   static const String orderHistory = '/order-history';
+  static const String savedMedicines = '/saved-medicines';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -80,6 +82,9 @@ class AppNavigation {
 
       case orderHistory:
         return MaterialPageRoute(builder: (_) => const OrderHistoryScreen());
+
+      case savedMedicines:
+        return MaterialPageRoute(builder: (_) => const SavedMedicinesScreen());
 
       default:
         return MaterialPageRoute(

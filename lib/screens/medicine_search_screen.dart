@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
-import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/services/medicine_catalog_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class MedicineSearchScreen extends StatefulWidget {
   final bool embeddedInNav;
@@ -22,22 +25,24 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
   List<Map<String, dynamic>> _filteredResults = [];
   bool _isSearching = false;
   String _selectedCategory = 'All';
-  double _priceRangeMax = 1000;
+  double _priceRangeMax = 5000;
   final List<String> _searchHistory = ['Amoxicillin', 'Metformin', 'Ibuprofen'];
 
-  final List<String> _categories = [
-    'All',
-    'Antibiotic',
-    'Antidiabetic',
-    'Pain Reliever/Anti-inflammatory',
-    'ACE Inhibitor (Blood Pressure)',
-    'Proton Pump Inhibitor',
-  ];
+  List<String> _categories = ['All'];
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    final generics = await MedicineCatalogService.instance.topGenerics();
+    if (!mounted) return;
+    setState(() {
+      _categories = ['All', ...generics];
+    });
   }
 
   @override
@@ -63,7 +68,9 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     setState(() => _isSearching = true);
 
     try {
-      final results = await MockDataService.searchMedicines(query);
+      final results = await MedicineCatalogService.instance.searchMedicines(
+        query,
+      );
       setState(() {
         _searchResults = results;
         _applyFilters();
@@ -324,7 +331,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
             child: Slider(
               value: _priceRangeMax,
               min: 0,
-              max: 1000,
+              max: 5000,
               divisions: 20,
               onChanged: _onPriceRangeChanged,
             ),
@@ -625,14 +632,18 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
   }
 
   void _addToCart(Map<String, dynamic> medicine) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${medicine['name']} added to cart'),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    context.read<CartProvider>().addItem(
+      id: medicine['id']?.toString() ?? '',
+      name: medicine['name']?.toString() ?? 'Unknown',
+      price: (medicine['price'] as num?)?.toDouble() ?? 0.0,
+      dosage: medicine['dosage']?.toString() ?? 'N/A',
     );
-    // TODO: Implement actual cart functionality
+    showAppSnackBar(
+      context,
+      '${medicine['name']} added to cart',
+      actionLabel: 'View Cart',
+      onAction: () => Navigator.pushNamed(context, AppNavigation.cart),
+    );
   }
 
   void _showErrorSnackBar(String message) {

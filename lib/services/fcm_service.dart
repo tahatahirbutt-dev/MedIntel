@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:med_intel/services/notification_service.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -11,7 +12,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 class FCMService {
   static final FCMService _instance = FCMService._internal();
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final NotificationService _notifications = NotificationService();
 
   factory FCMService() {
     return _instance;
@@ -20,6 +21,10 @@ class FCMService {
   FCMService._internal();
 
   Future<void> initialize() async {
+    await _notifications.initialize(
+      onNotificationTap: _onDidReceiveNotificationResponse,
+    );
+
     await _messaging.requestPermission(
       alert: true,
       announcement: true,
@@ -31,25 +36,6 @@ class FCMService {
 
     final token = await _messaging.getToken();
     debugPrint('FCM Token: $token');
-
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'medicine_schedule',
-      'Medicine Schedule',
-      description: 'Notifications for medicine schedules',
-      importance: Importance.high,
-    );
-
-    await _notificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
-
-    await _notificationsPlugin.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-        iOS: DarwinInitializationSettings(),
-      ),
-      onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
-    );
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -80,27 +66,12 @@ class FCMService {
       return;
     }
 
-    await _notificationsPlugin.show(
+    await _notifications.showNow(
       id: notification.hashCode,
-      title: notification.title,
-      body: notification.body,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          'medicine_schedule',
-          'Medicine Schedule',
-          channelDescription: 'Notifications for medicine schedules',
-          importance: Importance.high,
-          priority: Priority.high,
-          playSound: true,
-          icon: android?.smallIcon ?? '@mipmap/ic_launcher',
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
+      title: notification.title ?? '',
+      body: notification.body ?? '',
       payload: message.data.toString(),
+      androidSmallIcon: android?.smallIcon,
     );
   }
 

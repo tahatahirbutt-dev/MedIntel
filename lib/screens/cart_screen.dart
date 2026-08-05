@@ -1,22 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/screens/checkout_screen.dart';
-
-class CartItem {
-  final String id;
-  final String name;
-  final double price;
-  int quantity;
-  final String dosage;
-
-  CartItem({
-    required this.id,
-    required this.name,
-    required this.price,
-    this.quantity = 1,
-    required this.dosage,
-  });
-}
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -26,42 +12,28 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  final List<CartItem> _cartItems = [
-    CartItem(
-      id: 'cart_1',
-      name: 'Amoxicillin',
-      price: 150.0,
-      quantity: 1,
-      dosage: '500mg',
-    ),
-    CartItem(
-      id: 'cart_2',
-      name: 'Ibuprofen',
-      price: 80.0,
-      quantity: 2,
-      dosage: '400mg',
-    ),
-  ];
-
   bool _agreeToTerms = false;
 
   @override
   Widget build(BuildContext context) {
+    final cart = context.watch<CartProvider>();
+    final cartItems = cart.items;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _buildHeader(),
+          _buildHeader(cartItems.length),
           Expanded(
-            child: _cartItems.isEmpty
+            child: cartItems.isEmpty
                 ? _buildEmptyCart()
                 : ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      for (int i = 0; i < _cartItems.length; i++)
-                        _buildCartItemCard(_cartItems[i], i),
+                      for (int i = 0; i < cartItems.length; i++)
+                        _buildCartItemCard(cartItems[i], i),
                       const SizedBox(height: 20),
-                      _buildSummarySection(),
+                      _buildSummarySection(cartItems),
                       const SizedBox(height: 20),
                       _buildTermsCheckbox(),
                       const SizedBox(height: 20),
@@ -145,7 +117,7 @@ class _CartScreenState extends State<CartScreen> {
               IconButton(
                 icon: const Icon(Icons.delete_outline),
                 color: AppColors.danger,
-                onPressed: () => _removeItem(index),
+                onPressed: () => _removeItem(item),
                 splashRadius: 24,
               ),
             ],
@@ -168,7 +140,7 @@ class _CartScreenState extends State<CartScreen> {
                     IconButton(
                       icon: const Icon(Icons.remove, size: 18),
                       onPressed: item.quantity > 1
-                          ? () => _updateQuantity(index, item.quantity - 1)
+                          ? () => _updateQuantity(item.id, item.quantity - 1)
                           : null,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
@@ -186,7 +158,7 @@ class _CartScreenState extends State<CartScreen> {
                     IconButton(
                       icon: const Icon(Icons.add, size: 18),
                       onPressed: () =>
-                          _updateQuantity(index, item.quantity + 1),
+                          _updateQuantity(item.id, item.quantity + 1),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(
                         minWidth: 40,
@@ -222,8 +194,8 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildSummarySection() {
-    final subtotal = _cartItems.fold<double>(
+  Widget _buildSummarySection(List<CartItem> cartItems) {
+    final subtotal = cartItems.fold<double>(
       0,
       (sum, item) => sum + (item.price * item.quantity),
     );
@@ -339,15 +311,11 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void _updateQuantity(int index, int newQuantity) {
-    if (newQuantity > 0) {
-      setState(() {
-        _cartItems[index].quantity = newQuantity;
-      });
-    }
+  void _updateQuantity(String id, int newQuantity) {
+    context.read<CartProvider>().updateQuantity(id, newQuantity);
   }
 
-  void _removeItem(int index) {
+  void _removeItem(CartItem item) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -355,7 +323,7 @@ class _CartScreenState extends State<CartScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Remove Item', style: AppTextStyles.headlineSmall),
         content: Text(
-          'Remove ${_cartItems[index].name} from cart?',
+          'Remove ${item.name} from cart?',
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
@@ -365,9 +333,7 @@ class _CartScreenState extends State<CartScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              setState(() {
-                _cartItems.removeAt(index);
-              });
+              context.read<CartProvider>().removeItem(item.id);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -403,9 +369,7 @@ class _CartScreenState extends State<CartScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              setState(() {
-                _cartItems.clear();
-              });
+              context.read<CartProvider>().clear();
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -427,7 +391,7 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(int itemCount) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -466,7 +430,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
                 Text(
-                  '${_cartItems.length} item${_cartItems.length != 1 ? 's' : ''}',
+                  '$itemCount item${itemCount != 1 ? 's' : ''}',
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
@@ -476,7 +440,7 @@ class _CartScreenState extends State<CartScreen> {
               ],
             ),
           ),
-          if (_cartItems.isNotEmpty)
+          if (itemCount > 0)
             GestureDetector(
               onTap: _clearCart,
               child: Container(

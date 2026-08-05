@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:med_intel/screens/cart_screen.dart';
 import 'package:med_intel/screens/medicalprofilescreen.dart';
 import 'package:med_intel/screens/order_history_screen.dart';
+import 'package:med_intel/screens/saved_medicines_screen.dart';
 import 'package:med_intel/screens/settings_screen.dart';
 import 'package:med_intel/screens/auth_wrapper.dart';
 import 'package:med_intel/theme/app_theme.dart';
@@ -296,42 +298,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildQuickActions() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _buildActionBtn(
-            Icons.medical_services,
-            'Medical\nProfile',
-            Colors.blue,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MedicalProfileScreen()),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionBtn(
+                Icons.medical_services,
+                'Medical\nProfile',
+                Colors.blue,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MedicalProfileScreen(),
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionBtn(
+                Icons.receipt_long,
+                'Order\nHistory',
+                Colors.teal,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionBtn(
+                Icons.settings,
+                'Settings',
+                Colors.orange,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionBtn(
-            Icons.receipt_long,
-            'Order\nHistory',
-            Colors.teal,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionBtn(
+                Icons.shopping_cart_outlined,
+                'My\nCart',
+                AppColors.primary,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CartScreen()),
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionBtn(
-            Icons.settings,
-            'Settings',
-            Colors.orange,
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionBtn(
+                Icons.bookmark_outline,
+                'Saved\nMedicines',
+                Colors.purple,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SavedMedicinesScreen(),
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            const Expanded(child: SizedBox()),
+          ],
         ),
       ],
     );

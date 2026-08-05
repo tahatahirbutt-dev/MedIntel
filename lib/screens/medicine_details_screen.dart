@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:med_intel/services/mock_data.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
+import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/providers/saved_medicines_provider.dart';
+import 'package:med_intel/services/medicine_catalog_service.dart';
+import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class MedicineDetailsScreen extends StatefulWidget {
   final String medicineId;
@@ -17,19 +24,28 @@ class MedicineDetailsScreen extends StatefulWidget {
 
 class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
   late Future<Map<String, dynamic>?> _medicineFuture;
+  Map<String, dynamic>? _medicine;
 
   @override
   void initState() {
     super.initState();
-    _medicineFuture = MockDataService.getMedicineDetails(widget.medicineId);
+    _loadMedicine();
   }
 
   @override
   void didUpdateWidget(MedicineDetailsScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.medicineId != widget.medicineId) {
-      _medicineFuture = MockDataService.getMedicineDetails(widget.medicineId);
+      _loadMedicine();
     }
+  }
+
+  void _loadMedicine() {
+    _medicineFuture =
+        MedicineCatalogService.instance.getMedicineDetails(widget.medicineId)
+          ..then((data) {
+            if (mounted) setState(() => _medicine = data);
+          });
   }
 
   @override
@@ -41,13 +57,62 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareMedicineInfo(),
+          Consumer<CartProvider>(
+            builder: (context, cart, _) => Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart_outlined),
+                  tooltip: 'View cart',
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppNavigation.cart),
+                ),
+                if (cart.totalQuantity > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: AppColors.danger,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${cart.totalQuantity}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.bookmark_border),
-            onPressed: () => _saveMedicine(),
+            icon: const Icon(Icons.share),
+            onPressed: _medicine == null
+                ? null
+                : () => _shareMedicineInfo(_medicine!),
+          ),
+          Consumer<SavedMedicinesProvider>(
+            builder: (context, saved, _) {
+              final id = _medicine?['id']?.toString();
+              final isSaved = id != null && saved.isSaved(id);
+              return IconButton(
+                icon: Icon(isSaved ? Icons.bookmark : Icons.bookmark_border),
+                color: isSaved ? AppColors.primary : null,
+                onPressed: _medicine == null
+                    ? null
+                    : () => _saveMedicine(_medicine!),
+              );
+            },
           ),
         ],
       ),
@@ -72,11 +137,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                   Text('Error: ${snapshot.error}'),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => setState(() {
-                      _medicineFuture = MockDataService.getMedicineDetails(
-                        widget.medicineId,
-                      );
-                    }),
+                    onPressed: () => setState(_loadMedicine),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -552,13 +613,18 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          alt.toString(),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                        Expanded(
+                          child: Text(
+                            alt.toString(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Icon(
                           Icons.arrow_forward,
                           size: 16,
@@ -654,18 +720,6 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               ),
             ),
           ),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: OutlinedButton.icon(
-              onPressed: () => _findPharmacies(medicine),
-              icon: const Icon(Icons.local_pharmacy),
-              label: const Text(
-                'Find Pharmacies',
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-          ),
           const SizedBox(height: 12),
         ],
       ),
@@ -673,48 +727,49 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
   }
 
   void _addToCart(Map<String, dynamic> medicine) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${medicine['name']} added to cart'),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
+    context.read<CartProvider>().addItem(
+      id: medicine['id']?.toString() ?? widget.medicineId,
+      name: medicine['name']?.toString() ?? 'Unknown',
+      price: (medicine['price'] as num?)?.toDouble() ?? 0.0,
+      dosage: medicine['dosage']?.toString() ?? 'N/A',
     );
-    // TODO: Implement actual cart functionality
+    showAppSnackBar(
+      context,
+      '${medicine['name']} added to cart',
+      actionLabel: 'View Cart',
+      onAction: () => Navigator.pushNamed(context, AppNavigation.cart),
+    );
   }
 
-  void _findPharmacies(Map<String, dynamic> medicine) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Pharmacy search feature coming soon'),
-        behavior: SnackBarBehavior.floating,
-      ),
+  void _saveMedicine(Map<String, dynamic> medicine) {
+    final saved = context.read<SavedMedicinesProvider>();
+    final id = medicine['id']?.toString() ?? widget.medicineId;
+    final wasSaved = saved.isSaved(id);
+    saved.toggle(medicine);
+    showAppSnackBar(
+      context,
+      wasSaved ? 'Removed from saved medicines' : 'Medicine saved',
+      actionLabel: 'View Saved',
+      onAction: () =>
+          Navigator.pushNamed(context, AppNavigation.savedMedicines),
     );
-    // TODO: Implement pharmacy search with proper routing
-    // Navigator.pushNamed(
-    //   context,
-    //   '/pharmacy',
-    //   arguments: {'medicineId': widget.medicineId},
-    // );
   }
 
-  void _saveMedicine() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Medicine saved to favorites'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    // TODO: Implement favorites functionality
-  }
+  void _shareMedicineInfo(Map<String, dynamic> medicine) {
+    final name = medicine['name']?.toString() ?? 'Medicine';
+    final dosage = medicine['dosage']?.toString() ?? 'N/A';
+    final price = medicine['price'];
+    final description = medicine['description']?.toString() ?? '';
 
-  void _shareMedicineInfo() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Share functionality coming soon'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    // TODO: Implement share functionality
+    final buffer = StringBuffer()
+      ..writeln(name)
+      ..writeln('Dosage: $dosage')
+      ..writeln('Price: PKR ${price ?? 'N/A'}');
+    if (description.isNotEmpty) {
+      buffer.writeln('\n$description');
+    }
+    buffer.writeln('\nShared via MedIntel');
+
+    Share.share(buffer.toString(), subject: name);
   }
 }
