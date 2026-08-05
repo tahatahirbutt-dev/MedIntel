@@ -9,6 +9,7 @@ import 'package:med_intel/screens/saved_medicines_screen.dart';
 import 'package:med_intel/screens/settings_screen.dart';
 import 'package:med_intel/screens/auth_wrapper.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -436,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => showAppSnackBar(context, 'Coming soon'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 14),

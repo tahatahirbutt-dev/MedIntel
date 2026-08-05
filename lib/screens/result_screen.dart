@@ -1,8 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:med_intel/models/prescription_model.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
+import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/screens/drug_interaction_checker_screen.dart';
+import 'package:med_intel/services/medicine_catalog_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class ResultsScreen extends StatefulWidget {
   final Prescription prescription;
@@ -530,7 +535,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () => _openDetails(medicine),
                             icon: const Icon(Icons.info_outline, size: 16),
                             label: const Text('Details'),
                             style: OutlinedButton.styleFrom(
@@ -549,7 +554,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: () => _addToCart(medicine),
                             icon: const Icon(Icons.add_shopping_cart, size: 16),
                             label: const Text('Add to cart'),
                             style: ElevatedButton.styleFrom(
@@ -573,6 +578,61 @@ class _ResultsScreenState extends State<ResultsScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _openDetails(Medicine medicine) async {
+    final matches = await MedicineCatalogService.instance.searchMedicines(
+      medicine.name,
+      limit: 1,
+    );
+    if (!mounted) return;
+
+    if (matches.isEmpty) {
+      showAppSnackBar(
+        context,
+        "Couldn't find ${medicine.name} in the catalogue",
+      );
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      AppNavigation.medicineDetails,
+      arguments: {
+        'medicineId': matches.first['id'].toString(),
+        'medicineName': medicine.name,
+      },
+    );
+  }
+
+  Future<void> _addToCart(Medicine medicine) async {
+    final matches = await MedicineCatalogService.instance.searchMedicines(
+      medicine.name,
+      limit: 1,
+    );
+    if (!mounted) return;
+
+    if (matches.isEmpty) {
+      showAppSnackBar(
+        context,
+        "Couldn't find ${medicine.name} in the catalogue",
+      );
+      return;
+    }
+
+    final match = matches.first;
+    context.read<CartProvider>().addItem(
+      id: match['id'].toString(),
+      name: match['name']?.toString() ?? medicine.name,
+      price: (match['price'] as num?)?.toDouble() ?? 0.0,
+      dosage: match['dosage']?.toString() ?? medicine.dosage,
+    );
+    showAppSnackBar(
+      context,
+      '${medicine.name} added to cart',
+      actionLabel: 'View Cart',
+      onAction: () => Navigator.pushNamed(context, AppNavigation.cart),
     );
   }
 

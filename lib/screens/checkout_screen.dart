@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:med_intel/models/pharmacy.dart';
+import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/services/mock_data.dart';
-import 'package:med_intel/theme/app_theme.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -22,8 +23,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   List<Pharmacy> _nearbyPharmacies = [];
   bool _isLoadingPharmacies = true;
 
-  // Mock cart data
-  final double _subtotal = 230.0;
   final double _tax = 20.0;
   double _deliveryFee = 120.0;
 
@@ -61,6 +60,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cart = context.watch<CartProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Checkout'),
@@ -68,17 +69,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          // Stepper
-          Expanded(
-            child: _buildStepper(),
-          ),
+      body: cart.isEmpty
+          ? const Center(
+              child: Text(
+                'Your cart is empty',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+            )
+          : Column(
+              children: [
+                // Stepper
+                Expanded(
+                  child: _buildStepper(),
+                ),
 
-          // Order Summary at Bottom
-          _buildOrderSummary(),
-        ],
-      ),
+                // Order Summary at Bottom
+                _buildOrderSummary(cart.subtotal),
+              ],
+            ),
     );
   }
 
@@ -486,8 +494,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildOrderSummary() {
-    final total = _subtotal + _deliveryFee + _tax;
+  Widget _buildOrderSummary(double subtotal) {
+    final total = subtotal + _deliveryFee + _tax;
 
     return Container(
       decoration: BoxDecoration(
@@ -501,7 +509,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Subtotal'),
-              Text('PKR ${_subtotal.toStringAsFixed(2)}'),
+              Text('PKR ${subtotal.toStringAsFixed(2)}'),
             ],
           ),
           const SizedBox(height: 8),
@@ -602,37 +610,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _placeOrder() {
+    final orderId = 'ORD-${DateTime.now().millisecondsSinceEpoch}';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Order Placed!'),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle, size: 60, color: Colors.green),
-            SizedBox(height: 16),
-            Text(
+            const Icon(Icons.check_circle, size: 60, color: Colors.green),
+            const SizedBox(height: 16),
+            const Text(
               'Your order has been placed successfully!',
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              'Order ID: ORD-2024-12345',
+              'Order ID: $orderId',
               textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ],
         ),
         actions: [
           ElevatedButton(
             onPressed: () {
+              context.read<CartProvider>().clear();
               Navigator.pop(context);
               Navigator.popUntil(context, (route) => route.isFirst);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue.shade700,
             ),
-            child: const Text('Track Order'),
+            child: const Text('Done'),
           ),
         ],
       ),

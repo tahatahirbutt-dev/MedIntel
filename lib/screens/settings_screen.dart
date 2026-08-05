@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -124,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
         trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-        onTap: () {},
+        onTap: () => showAppSnackBar(context, 'Coming soon'),
       ),
     );
   }
