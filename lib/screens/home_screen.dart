@@ -5,7 +5,7 @@ import 'package:med_intel/screens/health_insights_screen.dart';
 import 'package:med_intel/screens/feedback_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:med_intel/services/mock_data.dart';
-import 'package:med_intel/services/firebase_schedule_service.dart';
+import 'package:med_intel/services/schedule_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final FirebaseScheduleService _service = FirebaseScheduleService();
+  final ScheduleService _service = ScheduleService.instance;
   final Set<String> _optimisticTaken = {};
   final Set<String> _removedIds = {};
 
@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+              colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
             ),
           ),
           padding: const EdgeInsets.fromLTRB(20, 56, 20, 26),

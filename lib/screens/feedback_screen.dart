@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class FeedbackScreen extends StatefulWidget {
@@ -18,7 +21,20 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     super.dispose();
   }
 
-  void _submitFeedback() {
+  static const _prefsKey = 'submitted_feedback';
+
+  Future<void> _submitFeedback() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefsKey);
+    final existing = raw != null ? (jsonDecode(raw) as List) : [];
+    existing.add({
+      'rating': _rating,
+      'comment': _commentController.text.trim(),
+      'date': DateTime.now().toIso8601String(),
+    });
+    await prefs.setString(_prefsKey, jsonEncode(existing));
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Thank you for your feedback!'),

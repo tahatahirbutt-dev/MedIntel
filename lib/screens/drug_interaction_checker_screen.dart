@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/utils/snackbar_utils.dart';
 
 class DrugInteractionCheckerScreen extends StatefulWidget {
@@ -118,7 +119,7 @@ class _DrugInteractionCheckerScreenState
           children: [
             Icon(
               isSafe ? Icons.check_circle : Icons.warning,
-              color: isSafe ? Colors.green : Colors.red,
+              color: isSafe ? AppColors.success : AppColors.danger,
               size: 28,
             ),
             const SizedBox(width: 8),
@@ -131,18 +132,17 @@ class _DrugInteractionCheckerScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isSafe) ...[
-                const Text(
+                Text(
                   'No significant interactions detected.',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.w500,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.success,
                   ),
                 ),
               ] else ...[
                 if (hasInteractions) ...[
-                  const Text(
+                  Text(
                     'Drug Interactions Found:',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    style: AppTextStyles.labelLarge,
                   ),
                   const SizedBox(height: 8),
                   ..._interactions!.map((interaction) {
@@ -150,16 +150,14 @@ class _DrugInteractionCheckerScreenState
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: _buildInteractionItem(interaction),
                     );
-                  }).toList(),
+                  }),
                   const SizedBox(height: 16),
                 ],
                 if (hasAllergyConflicts) ...[
-                  const Text(
+                  Text(
                     'Allergy Warnings:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.red,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.danger,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -168,20 +166,20 @@ class _DrugInteractionCheckerScreenState
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       child: _buildAllergyConflictItem(conflict),
                     );
-                  }).toList(),
+                  }),
                 ],
               ],
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: AppColors.infoLight,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(color: AppColors.info.withOpacity(0.3)),
                 ),
-                child: const Text(
+                child: Text(
                   '⚠️ This checker is informational only. Always consult a doctor or pharmacist before taking medicines.',
-                  style: TextStyle(fontSize: 12),
+                  style: AppTextStyles.bodySmall,
                 ),
               ),
             ],
@@ -194,9 +192,6 @@ class _DrugInteractionCheckerScreenState
           ),
           if (!isSafe)
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade700,
-              ),
               onPressed: () {
                 Navigator.pop(context);
                 showAppSnackBar(this.context, 'Coming soon');
@@ -226,10 +221,7 @@ class _DrugInteractionCheckerScreenState
               Expanded(
                 child: Text(
                   '${interaction['drug1']} + ${interaction['drug2']}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
+                  style: AppTextStyles.labelLarge,
                 ),
               ),
               Container(
@@ -240,9 +232,8 @@ class _DrugInteractionCheckerScreenState
                 ),
                 child: Text(
                   interaction['severity'] ?? 'Minor',
-                  style: const TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.white,
-                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -252,7 +243,9 @@ class _DrugInteractionCheckerScreenState
           const SizedBox(height: 6),
           Text(
             interaction['description'] ?? '',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -263,8 +256,8 @@ class _DrugInteractionCheckerScreenState
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: Colors.red, width: 4)),
-        color: Colors.red.shade50,
+        border: const Border(left: BorderSide(color: AppColors.danger, width: 4)),
+        color: AppColors.dangerLight,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Column(
@@ -275,24 +268,21 @@ class _DrugInteractionCheckerScreenState
               Expanded(
                 child: Text(
                   '${conflict['allergen']} Allergy',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Colors.red,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.danger,
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: AppColors.danger,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'ALERT',
-                  style: TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.white,
-                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -302,9 +292,8 @@ class _DrugInteractionCheckerScreenState
           const SizedBox(height: 6),
           Text(
             'Conflicting medicine: ${conflict['medicine']}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.red,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.danger,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -313,7 +302,7 @@ class _DrugInteractionCheckerScreenState
             const SizedBox(height: 6),
             Text(
               'Safe alternatives: ${(conflict['alternatives'] as List).join(", ")}',
-              style: TextStyle(fontSize: 11, color: Colors.green.shade700),
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
             ),
           ],
         ],
@@ -324,13 +313,13 @@ class _DrugInteractionCheckerScreenState
   Color _getSeverityColor(String severity) {
     switch (severity.toLowerCase()) {
       case 'severe':
-        return Colors.red;
+        return AppColors.danger;
       case 'moderate':
-        return Colors.orange;
+        return AppColors.warning;
       case 'minor':
-        return Colors.yellow;
+        return AppColors.info;
       default:
-        return Colors.grey;
+        return AppColors.textMuted;
     }
   }
 
@@ -338,7 +327,7 @@ class _DrugInteractionCheckerScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.danger,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -349,9 +338,6 @@ class _DrugInteractionCheckerScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Drug Interaction Checker'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -368,21 +354,20 @@ class _DrugInteractionCheckerScreenState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: AppColors.infoLight,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: AppColors.info.withOpacity(0.3)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info, color: Colors.blue.shade700),
+                  const Icon(Icons.info, color: AppColors.info),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'This tool checks for potential drug interactions. Always consult a healthcare professional.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue.shade900,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -393,10 +378,7 @@ class _DrugInteractionCheckerScreenState
             const SizedBox(height: 24),
 
             // Input Section
-            const Text(
-              'Add Medicines',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            Text('Add Medicines', style: AppTextStyles.headlineMedium),
             const SizedBox(height: 12),
 
             Row(
@@ -411,7 +393,7 @@ class _DrugInteractionCheckerScreenState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       filled: true,
-                      fillColor: Colors.grey.shade50,
+                      fillColor: AppColors.borderLight,
                     ),
                     onSubmitted: (_) => _addMedicine(),
                   ),
@@ -420,7 +402,7 @@ class _DrugInteractionCheckerScreenState
                 FloatingActionButton(
                   mini: true,
                   onPressed: _addMedicine,
-                  backgroundColor: Colors.blue.shade700,
+                  backgroundColor: AppColors.primary,
                   child: const Icon(Icons.add),
                 ),
               ],
@@ -432,10 +414,7 @@ class _DrugInteractionCheckerScreenState
             if (_selectedMedicines.isNotEmpty) ...[
               Text(
                 'Selected Medicines (${_selectedMedicines.length})',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.headlineSmall,
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -446,8 +425,8 @@ class _DrugInteractionCheckerScreenState
                     label: Text(medicine),
                     deleteIcon: const Icon(Icons.close, size: 18),
                     onDeleted: () => _removeMedicine(medicine),
-                    backgroundColor: Colors.blue.shade50,
-                    side: BorderSide(color: Colors.blue.shade200),
+                    backgroundColor: AppColors.primaryLight,
+                    side: BorderSide(color: AppColors.primary.withOpacity(0.3)),
                   );
                 }).toList(),
               ),
@@ -455,30 +434,27 @@ class _DrugInteractionCheckerScreenState
             ],
 
             // User Allergies Section
-            const Text(
-              'Your Allergies (Optional)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            Text('Your Allergies (Optional)', style: AppTextStyles.headlineSmall),
             const SizedBox(height: 12),
             if (_userAllergies.isEmpty)
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppColors.borderLight,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.medical_information,
-                      color: Colors.grey.shade600,
+                      color: AppColors.textMuted,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Add allergies to your profile for better safety checks',
-                        style: TextStyle(color: Colors.grey.shade700),
+                        style: AppTextStyles.bodyMedium,
                       ),
                     ),
                   ],
@@ -491,8 +467,8 @@ class _DrugInteractionCheckerScreenState
                 children: _userAllergies.map((allergy) {
                   return Chip(
                     label: Text(allergy),
-                    backgroundColor: Colors.red.shade50,
-                    side: BorderSide(color: Colors.red.shade200),
+                    backgroundColor: AppColors.dangerLight,
+                    side: BorderSide(color: AppColors.danger.withOpacity(0.3)),
                   );
                 }).toList(),
               ),
@@ -500,31 +476,12 @@ class _DrugInteractionCheckerScreenState
             const SizedBox(height: 24),
 
             // Check Button
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: _isChecking ? null : _checkInteractions,
-                icon: _isChecking
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.security_outlined),
-                label: Text(
-                  _isChecking ? 'Checking...' : 'Check Interactions',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                ),
-              ),
+            AppPrimaryButton(
+              label: _isChecking ? 'Checking...' : 'Check Interactions',
+              icon: Icons.security_outlined,
+              isLoading: _isChecking,
+              color: AppColors.success,
+              onPressed: _isChecking ? null : _checkInteractions,
             ),
 
             const SizedBox(height: 20),
@@ -549,7 +506,7 @@ class _DrugInteractionCheckerScreenState
     final isSafe = !hasInteractions && !hasAllergyConflicts;
 
     return Card(
-      color: isSafe ? Colors.green.shade50 : Colors.red.shade50,
+      color: isSafe ? AppColors.successLight : AppColors.dangerLight,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -559,16 +516,14 @@ class _DrugInteractionCheckerScreenState
               children: [
                 Icon(
                   isSafe ? Icons.check_circle : Icons.warning_amber,
-                  color: isSafe ? Colors.green : Colors.red,
+                  color: isSafe ? AppColors.success : AppColors.danger,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
                 Text(
                   isSafe ? 'Safe Combination' : 'Interactions Detected',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isSafe ? Colors.green.shade700 : Colors.red.shade700,
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: isSafe ? AppColors.success : AppColors.danger,
                   ),
                 ),
               ],
@@ -577,17 +532,17 @@ class _DrugInteractionCheckerScreenState
             if (hasInteractions)
               Text(
                 '${_interactions!.length} interaction(s) found',
-                style: TextStyle(color: Colors.red.shade700),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.danger),
               ),
             if (hasAllergyConflicts)
               Text(
                 '${_allergyConflicts!.length} allergy conflict(s) found',
-                style: TextStyle(color: Colors.red.shade700),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.danger),
               ),
             if (isSafe)
               Text(
                 'No significant interactions detected',
-                style: TextStyle(color: Colors.green.shade700),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.success),
               ),
           ],
         ),

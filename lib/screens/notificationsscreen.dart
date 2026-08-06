@@ -1,95 +1,215 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:med_intel/models/medicine_schedule.dart';
+import 'package:med_intel/navigation/app_navigation.dart';
+import 'package:med_intel/providers/orders_provider.dart';
+import 'package:med_intel/screens/schedule_screen.dart';
+import 'package:med_intel/services/schedule_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
+/// Notifications are derived live from real app state — missed/refill
+/// reminders from [ScheduleService] and order updates from [OrdersProvider]
+/// — rather than being a standalone stored list. Read/dismissed state for
+/// each derived notification is keyed by a deterministic id and persisted
+/// separately so it survives the underlying data changing shape.
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({Key? key}) : super(key: key);
+  const NotificationsScreen({super.key});
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  final List<Map<String, dynamic>> _notifications = [
-    {
-      'id': '1',
-      'title': 'Order Shipped',
-      'message': 'Your order #ORD-2024-001 has been shipped and is on the way.',
-      'time': '10 min ago',
-      'type': 'order',
-      'read': false,
-      'group': 'Today',
-    },
-    {
-      'id': '2',
-      'title': 'Medicine Available',
-      'message': 'Amoxicillin 500mg is now back in stock at Care Pharmacy.',
-      'time': '2 hours ago',
-      'type': 'stock',
-      'read': false,
-      'group': 'Today',
-    },
-    {
-      'id': '3',
-      'title': 'Prescription Refill Reminder',
-      'message': 'Time to refill your prescription for Metformin 500mg.',
-      'time': '5 hours ago',
-      'type': 'reminder',
-      'read': true,
-      'group': 'Today',
-    },
-    {
-      'id': '4',
-      'title': 'New Pharmacy Added',
-      'message': 'Medicare Pharmacy is now available near you in G-9/4.',
-      'time': 'Yesterday',
-      'type': 'pharmacy',
-      'read': true,
-      'group': 'Yesterday',
-    },
-    {
-      'id': '5',
-      'title': 'Health Tip',
-      'message':
-          'Remember to take your medicine after meals for better absorption.',
-      'time': '2 days ago',
-      'type': 'tip',
-      'read': true,
-      'group': 'Earlier',
-    },
-    {
-      'id': '6',
-      'title': 'Order Delivered',
-      'message': 'Your order #ORD-2023-045 has been delivered successfully.',
-      'time': '3 days ago',
-      'type': 'order',
-      'read': true,
-      'group': 'Earlier',
-    },
-  ];
+  static const _readIdsKey = 'notif_read_ids';
+  static const _dismissedIdsKey = 'notif_dismissed_ids';
+
+  final _scheduleService = ScheduleService.instance;
+
+  Set<String> _readIds = {};
+  Set<String> _dismissedIds = {};
+  List<Map<String, dynamic>> _latestNotifications = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReadState();
+  }
+
+  Future<void> _loadReadState() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _readIds = (prefs.getStringList(_readIdsKey) ?? []).toSet();
+      _dismissedIds = (prefs.getStringList(_dismissedIdsKey) ?? []).toSet();
+    });
+  }
+
+  Future<void> _persistReadState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_readIdsKey, _readIds.toList());
+    await prefs.setStringList(_dismissedIdsKey, _dismissedIds.toList());
+  }
 
   @override
   Widget build(BuildContext context) {
-    final unread = _notifications.where((n) => !(n['read'] as bool)).length;
-    final grouped = _groupNotifications();
+    final orders = context.watch<OrdersProvider>().orders;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          _buildHeader(unread),
-          Expanded(
-            child: _notifications.isEmpty
-                ? _buildEmptyState()
-                : _buildGroupedList(grouped),
-          ),
-        ],
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _scheduleService.getMissedDosesStream(),
+        builder: (context, missedSnap) {
+          return StreamBuilder<List<MedicineSchedule>>(
+            stream: _scheduleService.getEndingSoonSchedulesStream(),
+            builder: (context, endingSnap) {
+              final notifications = _buildNotifications(
+                missedDoses: missedSnap.data ?? const [],
+                endingSoon: endingSnap.data ?? const [],
+                orders: orders,
+              );
+              _latestNotifications = notifications;
+
+              final unread = notifications
+                  .where((n) => !(n['read'] as bool))
+                  .length;
+              final grouped = _groupNotifications(notifications);
+
+              return Column(
+                children: [
+                  _buildHeader(unread),
+                  Expanded(
+                    child: notifications.isEmpty
+                        ? _buildEmptyState()
+                        : _buildGroupedList(grouped),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
 
-  Map<String, List<Map<String, dynamic>>> _groupNotifications() {
+  // ── Derive notifications from real app state ──────────────
+
+  List<Map<String, dynamic>> _buildNotifications({
+    required List<Map<String, dynamic>> missedDoses,
+    required List<MedicineSchedule> endingSoon,
+    required List<Map<String, dynamic>> orders,
+  }) {
+    final items = <Map<String, dynamic>>[];
+
+    for (final dose in missedDoses) {
+      final id = 'missed_${dose['id']}';
+      if (_dismissedIds.contains(id)) continue;
+      items.add({
+        'id': id,
+        'title': 'Missed dose',
+        'message':
+            'You missed ${dose['dosage']} of ${dose['medicineName']} at ${dose['time']}.',
+        'type': 'missed',
+        'timestamp': dose['scheduledTime'] as DateTime,
+        'read': _readIds.contains(id),
+        'doseId': dose['id'] as String,
+      });
+    }
+
+    for (final schedule in endingSoon) {
+      final id = 'refill_${schedule.id}';
+      if (_dismissedIds.contains(id)) continue;
+      final daysLeft = schedule.remainingDays;
+      items.add({
+        'id': id,
+        'title': 'Refill reminder',
+        'message': daysLeft <= 0
+            ? '${schedule.medicineName} schedule ends today. Refill soon to stay on track.'
+            : '${schedule.medicineName} schedule ends in $daysLeft day${daysLeft == 1 ? '' : 's'}. Time to refill.',
+        'type': 'reminder',
+        'timestamp': DateTime.now(),
+        'read': _readIds.contains(id),
+      });
+    }
+
+    for (final order in orders) {
+      final status = (order['status'] as String? ?? 'pending').toLowerCase();
+      final id = 'order_${order['id']}_$status';
+      if (_dismissedIds.contains(id)) continue;
+
+      final orderId = order['id'] as String? ?? '';
+      final (title, message) = switch (status) {
+        'delivered' => (
+          'Order Delivered',
+          'Your order $orderId has been delivered. Enjoy!',
+        ),
+        'cancelled' => (
+          'Order Cancelled',
+          'Your order $orderId was cancelled.',
+        ),
+        _ => (
+          'Order Placed',
+          'Your order $orderId has been placed and is being prepared.',
+        ),
+      };
+
+      items.add({
+        'id': id,
+        'title': title,
+        'message': message,
+        'type': 'order',
+        'timestamp': _orderTimestamp(order),
+        'read': _readIds.contains(id),
+      });
+    }
+
+    items.sort(
+      (a, b) =>
+          (b['timestamp'] as DateTime).compareTo(a['timestamp'] as DateTime),
+    );
+    return items;
+  }
+
+  DateTime _orderTimestamp(Map<String, dynamic> order) {
+    final id = order['id']?.toString() ?? '';
+    final match = RegExp(r'(\d+)$').firstMatch(id);
+    if (match != null) {
+      final millis = int.tryParse(match.group(1)!);
+      if (millis != null) return DateTime.fromMillisecondsSinceEpoch(millis);
+    }
+    final date = order['date']?.toString();
+    if (date != null) {
+      final parsed = DateTime.tryParse(date);
+      if (parsed != null) return parsed;
+    }
+    return DateTime.now();
+  }
+
+  String _groupLabel(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    if (day == today) return 'Today';
+    if (day == today.subtract(const Duration(days: 1))) return 'Yesterday';
+    return 'Earlier';
+  }
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24)
+      return '${diff.inHours} hr${diff.inHours == 1 ? '' : 's'} ago';
+    if (diff.inDays < 2) return 'Yesterday';
+    return '${diff.inDays} days ago';
+  }
+
+  Map<String, List<Map<String, dynamic>>> _groupNotifications(
+    List<Map<String, dynamic>> notifications,
+  ) {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (final n in _notifications) {
-      final group = n['group'] as String;
+    for (final n in notifications) {
+      final group = _groupLabel(n['timestamp'] as DateTime);
       grouped.putIfAbsent(group, () => []).add(n);
     }
     return grouped;
@@ -101,7 +221,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+          colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
         ),
       ),
       padding: const EdgeInsets.fromLTRB(20, 54, 16, 20),
@@ -187,16 +307,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildGroupedList(Map<String, List<Map<String, dynamic>>> grouped) {
+    // Keep a stable, chronological group order regardless of Map iteration order.
+    const order = ['Today', 'Yesterday', 'Earlier'];
+    final keys = order.where(grouped.containsKey).toList();
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: grouped.entries.map((entry) {
+      children: keys.map((key) {
+        final entryValue = grouped[key]!;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 10, top: 4),
               child: Text(
-                entry.key,
+                key,
                 style: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.textMuted,
                   fontWeight: FontWeight.w700,
@@ -204,7 +329,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
               ),
             ),
-            ...entry.value.map(_buildNotificationCard),
+            ...entryValue.map(_buildNotificationCard),
             const SizedBox(height: 8),
           ],
         );
@@ -214,7 +339,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildNotificationCard(Map<String, dynamic> n) {
     final isUnread = !(n['read'] as bool);
-    final config = _typeConfig(n['type'] as String);
+    final type = n['type'] as String;
+    final config = _typeConfig(type);
 
     return Dismissible(
       key: Key(n['id'] as String),
@@ -229,14 +355,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
-      onDismissed: (_) {
-        setState(() => _notifications.removeWhere((x) => x['id'] == n['id']));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Notification removed')));
-      },
+      onDismissed: (_) => _dismiss(n['id'] as String),
       child: GestureDetector(
-        onTap: () => _markRead(n['id'] as String),
+        onTap: () => _handleTap(n),
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
@@ -322,12 +443,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 6),
-                              Text(
-                                n['time'] as String,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textMuted,
-                                  fontSize: 11,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    _timeAgo(n['timestamp'] as DateTime),
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.textMuted,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  if (type == 'missed') ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTap: () => _markDoseTaken(n),
+                                      child: Text(
+                                        'Mark as taken',
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
@@ -377,15 +516,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         AppColors.primary,
         AppColors.primaryLight,
       ),
-      'stock' => _NotifConfig(
-        Icons.inventory_2_outlined,
-        AppColors.secondary,
-        AppColors.secondaryLight,
+      'missed' => _NotifConfig(
+        Icons.alarm_off_outlined,
+        AppColors.danger,
+        AppColors.dangerLight,
       ),
       'reminder' => _NotifConfig(
         Icons.alarm_outlined,
         AppColors.warning,
         AppColors.warningLight,
+      ),
+      'stock' => _NotifConfig(
+        Icons.inventory_2_outlined,
+        AppColors.secondary,
+        AppColors.secondaryLight,
       ),
       'pharmacy' => _NotifConfig(
         Icons.local_pharmacy_outlined,
@@ -405,17 +549,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     };
   }
 
+  // ── Actions ────────────────────────────────────────────────
+
+  void _handleTap(Map<String, dynamic> n) {
+    _markRead(n['id'] as String);
+    final type = n['type'] as String;
+    if (type == 'order') {
+      Navigator.pushNamed(context, AppNavigation.orderHistory);
+    } else if (type == 'missed' || type == 'reminder') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ScheduleScreen()),
+      );
+    }
+  }
+
+  Future<void> _markDoseTaken(Map<String, dynamic> n) async {
+    final doseId = n['doseId'] as String?;
+    if (doseId == null) return;
+    try {
+      await _scheduleService.markDoseAsTaken(doseId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Marked as taken'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
   void _markRead(String id) {
-    setState(() {
-      final i = _notifications.indexWhere((n) => n['id'] == id);
-      if (i != -1) _notifications[i]['read'] = true;
-    });
+    if (_readIds.contains(id)) return;
+    setState(() => _readIds.add(id));
+    _persistReadState();
   }
 
   void _markAllRead() {
     setState(() {
-      for (final n in _notifications) n['read'] = true;
+      _readIds.addAll(_latestNotifications.map((n) => n['id'] as String));
     });
+    _persistReadState();
+  }
+
+  void _dismiss(String id) {
+    setState(() => _dismissedIds.add(id));
+    _persistReadState();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Notification removed')));
   }
 
   void _clearAll() {
@@ -438,7 +626,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              setState(() => _notifications.clear());
+              setState(() {
+                _dismissedIds.addAll(
+                  _latestNotifications.map((n) => n['id'] as String),
+                );
+              });
+              _persistReadState();
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),

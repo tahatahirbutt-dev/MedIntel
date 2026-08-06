@@ -1,8 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class MedicineSchedule {
   final String id;
-  final String userId;
   final String medicineName;
   final String dosage;
   final List<String> times;
@@ -14,7 +11,6 @@ class MedicineSchedule {
 
   MedicineSchedule({
     required this.id,
-    required this.userId,
     required this.medicineName,
     required this.dosage,
     required this.times,
@@ -32,32 +28,31 @@ class MedicineSchedule {
     return endDate.difference(now).inDays;
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
-      'userId': userId,
+      'id': id,
       'medicineName': medicineName,
       'dosage': dosage,
       'times': times,
       'durationDays': durationDays,
-      'startDate': Timestamp.fromDate(startDate),
+      'startDate': startDate.toIso8601String(),
       'isActive': isActive,
       'notes': notes,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
-  factory MedicineSchedule.fromMap(String docId, Map<String, dynamic> map) {
+  factory MedicineSchedule.fromJson(Map<String, dynamic> json) {
     return MedicineSchedule(
-      id: docId,
-      userId: map['userId'] as String,
-      medicineName: map['medicineName'] as String,
-      dosage: map['dosage'] as String,
-      times: List<String>.from(map['times'] ?? []),
-      durationDays: map['durationDays'] as int,
-      startDate: (map['startDate'] as Timestamp).toDate(),
-      isActive: map['isActive'] as bool? ?? true,
-      notes: map['notes'] as String?,
-      createdAt: (map['createdAt'] as Timestamp).toDate(),
+      id: json['id'] as String,
+      medicineName: json['medicineName'] as String,
+      dosage: json['dosage'] as String,
+      times: List<String>.from(json['times'] as List? ?? []),
+      durationDays: json['durationDays'] as int,
+      startDate: DateTime.parse(json['startDate'] as String),
+      isActive: json['isActive'] as bool? ?? true,
+      notes: json['notes'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 }
@@ -65,7 +60,6 @@ class MedicineSchedule {
 class ScheduledDose {
   final String id;
   final String scheduleId;
-  final String userId;
   final DateTime scheduledTime;
   final bool isTaken;
   final DateTime? takenAt;
@@ -73,30 +67,30 @@ class ScheduledDose {
   ScheduledDose({
     required this.id,
     required this.scheduleId,
-    required this.userId,
     required this.scheduledTime,
     this.isTaken = false,
     this.takenAt,
   });
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'scheduleId': scheduleId,
-      'userId': userId,
-      'scheduledTime': Timestamp.fromDate(scheduledTime),
+      'scheduledTime': scheduledTime.toIso8601String(),
       'isTaken': isTaken,
-      'takenAt': takenAt != null ? Timestamp.fromDate(takenAt!) : null,
+      'takenAt': takenAt?.toIso8601String(),
     };
   }
 
-  factory ScheduledDose.fromMap(String docId, Map<String, dynamic> map) {
+  factory ScheduledDose.fromJson(Map<String, dynamic> json) {
     return ScheduledDose(
-      id: docId,
-      scheduleId: map['scheduleId'] as String,
-      userId: map['userId'] as String,
-      scheduledTime: (map['scheduledTime'] as Timestamp).toDate(),
-      isTaken: map['isTaken'] as bool? ?? false,
-      takenAt: map['takenAt'] != null ? (map['takenAt'] as Timestamp).toDate() : null,
+      id: json['id'] as String,
+      scheduleId: json['scheduleId'] as String,
+      scheduledTime: DateTime.parse(json['scheduledTime'] as String),
+      isTaken: json['isTaken'] as bool? ?? false,
+      takenAt: json['takenAt'] != null
+          ? DateTime.parse(json['takenAt'] as String)
+          : null,
     );
   }
 }

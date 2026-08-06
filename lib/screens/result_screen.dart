@@ -79,7 +79,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                    colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
                   ),
                 ),
                 child: SafeArea(

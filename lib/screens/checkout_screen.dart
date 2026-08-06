@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:med_intel/models/pharmacy.dart';
 import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/providers/orders_provider.dart';
 import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/theme/app_theme.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -63,17 +65,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cart = context.watch<CartProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Checkout'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Checkout')),
       body: cart.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'Your cart is empty',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: AppTextStyles.bodyMedium,
               ),
             )
           : Column(
@@ -148,9 +145,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Delivery Type',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         RadioListTile(
@@ -181,9 +178,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           },
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'Delivery Address',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         TextField(
@@ -195,14 +192,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             filled: true,
-            fillColor: Colors.grey.shade50,
+            fillColor: AppColors.borderLight,
             contentPadding: const EdgeInsets.all(12),
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Phone Number',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         TextField(
@@ -214,7 +211,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             filled: true,
-            fillColor: Colors.grey.shade50,
+            fillColor: AppColors.borderLight,
           ),
           keyboardType: TextInputType.phone,
         ),
@@ -231,9 +228,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Choose a Pharmacy',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         ..._nearbyPharmacies.map((pharmacy) {
@@ -248,8 +245,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: isSelected ? 4 : 0,
-      color: isSelected ? Colors.blue.shade50 : Colors.white,
+      elevation: 0,
+      color: isSelected ? AppColors.primaryLight : AppColors.surface,
       child: InkWell(
         onTap: () {
           setState(() {
@@ -271,21 +268,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          pharmacy.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        Text(pharmacy.name, style: AppTextStyles.headlineSmall),
                         const SizedBox(height: 4),
-                        Text(
-                          pharmacy.address,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
+                        Text(pharmacy.address, style: AppTextStyles.bodySmall),
                       ],
                     ),
                   ),
@@ -304,23 +289,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.star, size: 16, color: Colors.amber),
+                      const Icon(Icons.star, size: 16, color: AppColors.warning),
                       const SizedBox(width: 4),
                       Text(
                         '${pharmacy.rating} (${pharmacy.reviewCount})',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],
                   ),
                   Text(
                     '${pharmacy.deliveryTime} mins',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.blue.shade700,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
@@ -337,9 +320,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Payment Method',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         _buildPaymentOption(
@@ -364,18 +347,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.amber.shade50,
+            color: AppColors.warningLight,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.amber.shade200),
+            border: Border.all(color: AppColors.warning.withOpacity(0.3)),
           ),
           child: Row(
             children: [
-              Icon(Icons.lock_outline, color: Colors.amber.shade700),
+              const Icon(Icons.lock_outline, color: AppColors.warning),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Your payment information is secure and encrypted',
-                  style: TextStyle(fontSize: 12, color: Colors.amber.shade900),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ],
@@ -448,18 +433,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: AppColors.successLight,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.green.shade200),
+            border: Border.all(color: AppColors.success.withOpacity(0.3)),
           ),
           child: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.green.shade700),
+              const Icon(Icons.check_circle, color: AppColors.success),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Your order is ready to be placed!',
-                  style: TextStyle(color: Colors.green.shade900),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.success,
+                  ),
                 ),
               ),
             ],
@@ -476,8 +463,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: Colors.grey.shade600,
+            style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -485,7 +471,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: AppTextStyles.labelLarge,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -499,8 +485,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: Colors.grey.shade300)),
-        color: Colors.grey.shade50,
+        border: Border(top: BorderSide(color: AppColors.border)),
+        color: AppColors.borderLight,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -508,61 +494,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Subtotal'),
-              Text('PKR ${subtotal.toStringAsFixed(2)}'),
+              Text('Subtotal', style: AppTextStyles.bodyMedium),
+              Text(
+                'PKR ${subtotal.toStringAsFixed(2)}',
+                style: AppTextStyles.bodyMedium,
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Delivery'),
-              Text('PKR ${_deliveryFee.toStringAsFixed(2)}'),
+              Text('Delivery', style: AppTextStyles.bodyMedium),
+              Text(
+                'PKR ${_deliveryFee.toStringAsFixed(2)}',
+                style: AppTextStyles.bodyMedium,
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Tax'),
-              Text('PKR ${_tax.toStringAsFixed(2)}'),
+              Text('Tax', style: AppTextStyles.bodyMedium),
+              Text(
+                'PKR ${_tax.toStringAsFixed(2)}',
+                style: AppTextStyles.bodyMedium,
+              ),
             ],
           ),
           const Divider(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Total',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              Text('Total', style: AppTextStyles.headlineMedium),
               Text(
                 'PKR ${total.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
+                style: AppTextStyles.headlineMedium.copyWith(
+                  color: AppColors.success,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _currentStep == 3 ? _placeOrder : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade700,
-              ),
-              child: Text(
-                _currentStep == 3 ? 'Place Order' : 'Continue',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+          AppPrimaryButton(
+            label: _currentStep == 3 ? 'Place Order' : 'Continue',
+            onPressed: _currentStep == 3 ? _placeOrder : null,
           ),
         ],
       ),
@@ -610,7 +587,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _placeOrder() {
-    final orderId = 'ORD-${DateTime.now().millisecondsSinceEpoch}';
+    final now = DateTime.now();
+    final orderId = 'ORD-${now.millisecondsSinceEpoch}';
+    final cart = context.read<CartProvider>();
+    final pharmacy = _nearbyPharmacies.firstWhere(
+      (p) => p.id == _selectedPharmacy,
+      orElse: () => _nearbyPharmacies.first,
+    );
+
+    context.read<OrdersProvider>().addOrder({
+      'id': orderId,
+      'date':
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}',
+      'medicines': cart.items.map((i) => '${i.name} ${i.dosage}').toList(),
+      'items': cart.items
+          .map(
+            (i) => {
+              'id': i.id,
+              'name': i.name,
+              'dosage': i.dosage,
+              'price': i.price,
+              'quantity': i.quantity,
+            },
+          )
+          .toList(),
+      'total': cart.subtotal + _deliveryFee + _tax,
+      'pharmacy': pharmacy.name,
+      'status': 'pending',
+      'deliveryDate': null,
+      'rating': null,
+      'trackingId': 'TRACK-$orderId',
+    });
 
     showDialog(
       context: context,
@@ -619,17 +626,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_circle, size: 60, color: Colors.green),
+            const Icon(Icons.check_circle, size: 60, color: AppColors.success),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Your order has been placed successfully!',
               textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
               'Order ID: $orderId',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: AppTextStyles.labelLarge,
             ),
           ],
         ),
@@ -640,9 +648,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Navigator.pop(context);
               Navigator.popUntil(context, (route) => route.isFirst);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade700,
-            ),
             child: const Text('Done'),
           ),
         ],
@@ -667,7 +672,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.danger,
         behavior: SnackBarBehavior.floating,
       ),
     );

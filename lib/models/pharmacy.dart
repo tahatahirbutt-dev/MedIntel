@@ -8,6 +8,9 @@ class Pharmacy {
   final Map<String, bool> availability; // medicineId -> inStock
   final double deliveryFee;
   final int deliveryTime; // in minutes
+  final double? latitude;
+  final double? longitude;
+  final String? phone;
 
   Pharmacy({
     required this.id,
@@ -19,5 +22,8 @@ class Pharmacy {
     required this.availability,
     required this.deliveryFee,
     required this.deliveryTime,
+    this.latitude,
+    this.longitude,
+    this.phone,
   });
 }

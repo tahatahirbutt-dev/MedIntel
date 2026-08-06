@@ -49,4 +49,10 @@ class SavedMedicinesProvider extends ChangeNotifier {
       _persist();
     }
   }
+
+  void clear() {
+    _saved.clear();
+    notifyListeners();
+    _persist();
+  }
 }
