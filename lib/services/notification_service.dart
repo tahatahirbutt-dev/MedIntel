@@ -148,9 +148,9 @@ class NotificationService {
     }
   }
 
-  /// Deterministic notification id derived from a Firestore dose document id,
-  /// so the same dose always maps to the same id and can be cancelled later
-  /// without having to keep a separate id-lookup table.
+  /// Deterministic notification id derived from a dose id, so the same dose
+  /// always maps to the same id and can be cancelled later without having
+  /// to keep a separate id-lookup table.
   static int doseNotificationId(String doseId) {
     return doseId.hashCode & 0x7fffffff;
   }

@@ -53,9 +53,6 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Medicine Details'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
         actions: [
           Consumer<CartProvider>(
             builder: (context, cart, _) => Stack(
@@ -128,13 +125,13 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.error_outline,
                     size: 60,
-                    color: Colors.red.shade400,
+                    color: AppColors.danger,
                   ),
                   const SizedBox(height: 16),
-                  Text('Error: ${snapshot.error}'),
+                  Text('Error: ${snapshot.error}', style: AppTextStyles.bodyMedium),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => setState(_loadMedicine),
@@ -150,13 +147,13 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.error_outline,
                     size: 60,
-                    color: Colors.grey.shade400,
+                    color: AppColors.textMuted,
                   ),
                   const SizedBox(height: 16),
-                  const Text('Medicine not found'),
+                  Text('Medicine not found', style: AppTextStyles.bodyMedium),
                 ],
               ),
             );
@@ -215,11 +212,11 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
   Widget _buildHeaderCard(Map<String, dynamic> medicine) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.blue.shade400, Colors.blue.shade700],
+          colors: [AppColors.gradientStart, AppColors.gradientEnd],
         ),
       ),
       padding: const EdgeInsets.all(24),
@@ -277,21 +274,12 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Price',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  Text('Price', style: AppTextStyles.labelLarge),
                   const SizedBox(height: 4),
                   Text(
                     'PKR ${medicine['price']?.toString() ?? 'N/A'}',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
+                    style: AppTextStyles.displaySmall.copyWith(
+                      color: AppColors.success,
                     ),
                   ),
                 ],
@@ -300,14 +288,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      'Availability',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text('Availability', style: AppTextStyles.labelLarge),
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -315,16 +296,14 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.shade50,
+                        color: AppColors.successLight,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.green.shade200),
+                        border: Border.all(color: AppColors.success.withOpacity(0.3)),
                       ),
                       child: Text(
                         'In Stock',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.green.shade700,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.success,
                         ),
                       ),
                     ),
@@ -347,17 +326,12 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Description',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              Text('Description', style: AppTextStyles.headlineMedium),
               const SizedBox(height: 12),
               Text(
                 medicine['description'] ?? 'No description available',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                  height: 1.6,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],
@@ -376,10 +350,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Usage Information',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              Text('Usage Information', style: AppTextStyles.headlineMedium),
               const SizedBox(height: 16),
               _buildDosageRow('Dosage:', medicine['dosage'] ?? 'N/A'),
               _buildDosageRow('Frequency:', medicine['frequency'] ?? 'N/A'),
@@ -400,17 +371,13 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: AppColors.textMuted,
               ),
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
+            child: Text(value, style: AppTextStyles.bodyLarge),
           ),
         ],
       ),
@@ -432,12 +399,9 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.orange.shade600),
+                  const Icon(Icons.info_outline, color: AppColors.warning),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Common Side Effects',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  Text('Common Side Effects', style: AppTextStyles.headlineMedium),
                 ],
               ),
               const SizedBox(height: 12),
@@ -447,8 +411,8 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                 children: sideEffects.map((effect) {
                   return Chip(
                     label: Text(effect.toString()),
-                    backgroundColor: Colors.orange.shade50,
-                    side: BorderSide(color: Colors.orange.shade200),
+                    backgroundColor: AppColors.warningLight,
+                    side: BorderSide(color: AppColors.warning.withOpacity(0.3)),
                   );
                 }).toList(),
               ),
@@ -467,7 +431,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Card(
-        color: Colors.red.shade50,
+        color: AppColors.dangerLight,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -475,24 +439,21 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.warning, color: Colors.red.shade600),
+                  const Icon(Icons.warning, color: AppColors.danger),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Serious Side Effects',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
+                    style: AppTextStyles.headlineMedium.copyWith(
+                      color: AppColors.danger,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Seek immediate medical attention if you experience:',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w500,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.danger,
                 ),
               ),
               const SizedBox(height: 8),
@@ -501,12 +462,14 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: [
-                      Icon(Icons.circle, size: 8, color: Colors.red.shade600),
+                      const Icon(Icons.circle, size: 8, color: AppColors.danger),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           effect.toString(),
-                          style: TextStyle(color: Colors.red.shade800),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.danger,
+                          ),
                         ),
                       ),
                     ],
@@ -535,15 +498,12 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
             children: [
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.warning_amber_outlined,
-                    color: Colors.amber.shade600,
+                    color: AppColors.warning,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    'Warnings & Precautions',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  Text('Warnings & Precautions', style: AppTextStyles.headlineMedium),
                 ],
               ),
               const SizedBox(height: 12),
@@ -553,16 +513,18 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.check_circle,
                         size: 16,
-                        color: Colors.amber.shade600,
+                        color: AppColors.warning,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           warning.toString(),
-                          style: TextStyle(color: Colors.grey.shade700),
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ],
@@ -592,11 +554,8 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Alternative Medicines',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Icon(Icons.swap_vert, color: Colors.blue.shade600),
+                  Text('Alternative Medicines', style: AppTextStyles.headlineMedium),
+                  const Icon(Icons.swap_vert, color: AppColors.primary),
                 ],
               ),
               const SizedBox(height: 12),
@@ -606,9 +565,9 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.blue.shade200),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                       borderRadius: BorderRadius.circular(8),
-                      color: Colors.blue.shade50,
+                      color: AppColors.primaryLight,
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -618,17 +577,14 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                             alt.toString(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppTextStyles.labelLarge,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(
+                        const Icon(
                           Icons.arrow_forward,
                           size: 16,
-                          color: Colors.blue.shade600,
+                          color: AppColors.primary,
                         ),
                       ],
                     ),
@@ -651,10 +607,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Chemical Information',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              Text('Chemical Information', style: AppTextStyles.headlineMedium),
               const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -663,19 +616,11 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Chemical Formula',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
+                        Text('Chemical Formula', style: AppTextStyles.bodySmall),
                         const SizedBox(height: 4),
                         Text(
                           medicine['chemicalFormula'] ?? 'N/A',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                          style: AppTextStyles.labelLarge.copyWith(
                             fontFamily: 'Courier',
                           ),
                         ),
@@ -688,12 +633,12 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: AppColors.borderLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
+                child: Text(
                   '⚠️ This is for informational purposes only. Always consult with a healthcare professional before taking any medicine.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: AppTextStyles.bodySmall,
                 ),
               ),
             ],
@@ -708,17 +653,10 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         children: [
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: () => _addToCart(medicine),
-              icon: const Icon(Icons.add_shopping_cart),
-              label: const Text('Add to Cart', style: TextStyle(fontSize: 16)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade700,
-              ),
-            ),
+          AppPrimaryButton(
+            label: 'Add to Cart',
+            icon: Icons.add_shopping_cart,
+            onPressed: () => _addToCart(medicine),
           ),
           const SizedBox(height: 12),
         ],

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/providers/orders_provider.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/utils/snackbar_utils.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   const OrderHistoryScreen({super.key});
@@ -8,43 +12,7 @@ class OrderHistoryScreen extends StatefulWidget {
 }
 
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
-
-  // ── Mock orders ───────────────────────────────
-  final List<Map<String, dynamic>> _orders = [
-    {
-      'id': 'ORD-2024-001',
-      'date': '2024-11-15',
-      'medicines': ['Amoxicillin 500mg', 'Ibuprofen 400mg'],
-      'total': 500.0,
-      'pharmacy': 'Care Pharmacy',
-      'status': 'delivered',
-      'deliveryDate': '2024-11-16',
-      'rating': 4.5,
-      'trackingId': 'TRACK-001',
-    },
-    {
-      'id': 'ORD-2024-002',
-      'date': '2024-11-10',
-      'medicines': ['Metformin 500mg'],
-      'total': 250.0,
-      'pharmacy': 'Life Pharmacy',
-      'status': 'delivered',
-      'deliveryDate': '2024-11-11',
-      'rating': 5.0,
-      'trackingId': 'TRACK-002',
-    },
-    {
-      'id': 'ORD-2024-003',
-      'date': '2024-11-12',
-      'medicines': ['Lisinopril 10mg'],
-      'total': 180.0,
-      'pharmacy': 'Medicare Pharmacy',
-      'status': 'pending',
-      'deliveryDate': null,
-      'rating': null,
-      'trackingId': 'TRACK-003',
-    },
-  ];
+  List<Map<String, dynamic>> _orders = [];
 
   String _filterStatus = 'All';
   final List<String> _statusFilters = [
@@ -69,6 +37,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _orders = context.watch<OrdersProvider>().orders;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
@@ -96,7 +66,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+            colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
           ),
         ),
         padding: const EdgeInsets.fromLTRB(8, 16, 20, 20),
@@ -652,7 +622,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               onPressed: tempRating == 0
                   ? null
                   : () {
-                      setState(() => order['rating'] = tempRating.toDouble());
+                      context.read<OrdersProvider>().rateOrder(
+                        order['id'] as String,
+                        tempRating.toDouble(),
+                      );
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -684,10 +657,30 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   void _reorder(Map<String, dynamic> order) {
-    ScaffoldMessenger.of(
+    final items = order['items'] as List? ?? [];
+    if (items.isEmpty) {
+      showAppSnackBar(context, "Couldn't find this order's items");
+      return;
+    }
+
+    final cart = context.read<CartProvider>();
+    for (final item in items) {
+      final map = item as Map;
+      cart.addItem(
+        id: map['id'].toString(),
+        name: map['name']?.toString() ?? 'Unknown',
+        price: (map['price'] as num?)?.toDouble() ?? 0.0,
+        dosage: map['dosage']?.toString() ?? 'N/A',
+        quantity: (map['quantity'] as num?)?.toInt() ?? 1,
+      );
+    }
+
+    showAppSnackBar(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Items added to cart')));
-    Navigator.pushNamed(context, '/cart');
+      'Items added to cart',
+      actionLabel: 'View Cart',
+      onAction: () => Navigator.pushNamed(context, '/cart'),
+    );
   }
 }
 
@@ -733,7 +726,7 @@ class OrderTrackingScreen extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
               ),
             ),
             padding: const EdgeInsets.fromLTRB(8, 48, 20, 20),

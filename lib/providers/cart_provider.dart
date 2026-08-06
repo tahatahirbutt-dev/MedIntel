@@ -96,6 +96,8 @@ class CartProvider extends ChangeNotifier {
     _persist();
   }
 
+  static const maxQuantityPerItem = 20;
+
   void updateQuantity(String id, int quantity) {
     if (quantity <= 0) {
       removeItem(id);
@@ -103,7 +105,9 @@ class CartProvider extends ChangeNotifier {
     }
     final item = _items[id];
     if (item != null) {
-      item.quantity = quantity;
+      item.quantity = quantity > maxQuantityPerItem
+          ? maxQuantityPerItem
+          : quantity;
       notifyListeners();
       _persist();
     }

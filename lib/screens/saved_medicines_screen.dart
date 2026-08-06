@@ -40,7 +40,7 @@ class SavedMedicinesScreen extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+          colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
         ),
       ),
       padding: const EdgeInsets.fromLTRB(20, 56, 20, 28),

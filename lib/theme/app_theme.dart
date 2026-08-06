@@ -42,6 +42,10 @@ class AppColors {
   static const gradientStart = Color(0xFF2563EB);
   static const gradientEnd = Color(0xFF0EA47D);
 
+  // Screen header gradient (SliverAppBar/header banners)
+  static const headerGradientStart = Color(0xFF1E40AF);
+  static const headerGradientEnd = Color(0xFF2563EB);
+
   // Medicine category colors
   static const antibiotic = Color(0xFFD97706);
   static const antibioticBg = Color(0xFFFFF7ED);

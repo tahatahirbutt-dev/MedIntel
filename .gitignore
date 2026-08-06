@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Firebase config — never commit, contains project API keys
+google-services.json
+GoogleService-Info.plist
+
 # Symbolication related
 app.*.symbols
 

@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:med_intel/screens/result_screen.dart';
-import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/services/django_prescription_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class UploadScreen extends StatefulWidget {
@@ -77,7 +77,9 @@ class _UploadScreenState extends State<UploadScreen>
     _uploadAnim.forward();
 
     try {
-      final prescription = await MockDataService.getMockPrescription();
+      final prescription = await DjangoPrescriptionService.scanPrescription(
+        _selectedImage!,
+      );
       if (!mounted) return;
       Navigator.push(
         context,
@@ -140,7 +142,7 @@ class _UploadScreenState extends State<UploadScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+          colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
         ),
       ),
       padding: const EdgeInsets.fromLTRB(20, 56, 20, 28),

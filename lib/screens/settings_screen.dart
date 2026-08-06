@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/utils/snackbar_utils.dart';
 
@@ -10,10 +11,40 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const _notificationsKey = 'settings_notifications_enabled';
+  static const _reminderKey = 'settings_reminder_enabled';
+  static const _languageKey = 'settings_language';
+  static const _timezoneKey = 'settings_timezone';
+
   bool _notificationsEnabled = true;
   bool _reminderEnabled = true;
   String _language = 'English';
   String _timezone = 'GMT+5';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _notificationsEnabled = prefs.getBool(_notificationsKey) ?? true;
+      _reminderEnabled = prefs.getBool(_reminderKey) ?? true;
+      _language = prefs.getString(_languageKey) ?? 'English';
+      _timezone = prefs.getString(_timezoneKey) ?? 'GMT+5';
+    });
+  }
+
+  Future<void> _savePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsKey, _notificationsEnabled);
+    await prefs.setBool(_reminderKey, _reminderEnabled);
+    await prefs.setString(_languageKey, _language);
+    await prefs.setString(_timezoneKey, _timezone);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +65,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeThumbColor: AppColors.primary,
             title: const Text('Enable notifications'),
             subtitle: const Text('Receive order and medication alerts'),
-            onChanged: (value) => setState(() => _notificationsEnabled = value),
+            onChanged: (value) {
+              setState(() => _notificationsEnabled = value);
+              _savePrefs();
+            },
             tileColor: AppColors.surface,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -44,7 +78,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeThumbColor: AppColors.secondary,
             title: const Text('Daily reminder'),
             subtitle: const Text('Get a morning medication checklist'),
-            onChanged: (value) => setState(() => _reminderEnabled = value),
+            onChanged: (value) {
+              setState(() => _reminderEnabled = value);
+              _savePrefs();
+            },
             tileColor: AppColors.surface,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -54,15 +91,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDropdownTile(
             label: 'Language',
             value: _language,
-            options: const ['English', 'اردو', 'Français'],
-            onChanged: (value) => setState(() => _language = value),
+            options: const ['English', 'اردو'],
+            onChanged: (value) {
+              setState(() => _language = value);
+              _savePrefs();
+            },
           ),
           const SizedBox(height: 10),
           _buildDropdownTile(
             label: 'Timezone',
             value: _timezone,
             options: const ['GMT+5', 'GMT+4', 'UTC'],
-            onChanged: (value) => setState(() => _timezone = value),
+            onChanged: (value) {
+              setState(() => _timezone = value);
+              _savePrefs();
+            },
           ),
           const SizedBox(height: 20),
           _buildSectionTitle('Support'),

@@ -6,7 +6,7 @@ import 'package:med_intel/services/notification_service.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint('FCM background message: ${message.messageId}');
+  if (kDebugMode) debugPrint('FCM background message: ${message.messageId}');
 }
 
 class FCMService {
@@ -35,27 +35,29 @@ class FCMService {
     );
 
     final token = await _messaging.getToken();
-    debugPrint('FCM Token: $token');
+    if (kDebugMode) debugPrint('FCM Token: $token');
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('Received foreground message: ${message.notification?.title}');
+      if (kDebugMode) {
+        debugPrint('Received foreground message: ${message.notification?.title}');
+      }
       _showNotification(message);
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('Notification opened: ${message.data}');
+      if (kDebugMode) debugPrint('Notification opened: ${message.data}');
     });
 
     final initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      debugPrint('Initial FCM message: ${initialMessage.data}');
+      if (kDebugMode) debugPrint('Initial FCM message: ${initialMessage.data}');
     }
   }
 
   void _onDidReceiveNotificationResponse(NotificationResponse response) {
-    debugPrint('Tapped local notification: ${response.payload}');
+    if (kDebugMode) debugPrint('Tapped local notification: ${response.payload}');
   }
 
   Future<void> _showNotification(RemoteMessage message) async {

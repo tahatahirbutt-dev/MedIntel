@@ -168,7 +168,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+          colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
         ),
       ),
       padding: EdgeInsets.fromLTRB(20, widget.embeddedInNav ? 54 : 48, 20, 20),

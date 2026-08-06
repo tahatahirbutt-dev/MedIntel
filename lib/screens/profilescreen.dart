@@ -2,12 +2,19 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/providers/medical_profile_provider.dart';
+import 'package:med_intel/providers/orders_provider.dart';
+import 'package:med_intel/providers/saved_medicines_provider.dart';
 import 'package:med_intel/screens/cart_screen.dart';
 import 'package:med_intel/screens/medicalprofilescreen.dart';
 import 'package:med_intel/screens/order_history_screen.dart';
 import 'package:med_intel/screens/saved_medicines_screen.dart';
 import 'package:med_intel/screens/settings_screen.dart';
 import 'package:med_intel/screens/auth_wrapper.dart';
+import 'package:med_intel/services/schedule_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/utils/snackbar_utils.dart';
 
@@ -18,16 +25,53 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  static const _phoneKey = 'profile_phone_number';
+
   File? _profileImage;
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
-  final User? _fbUser = FirebaseAuth.instance.currentUser;
+  User? _fbUser = FirebaseAuth.instance.currentUser;
+  bool _savingChanges = false;
 
   @override
   void initState() {
     super.initState();
     _nameCtrl.text = _fbUser?.displayName ?? '';
+    _loadPhone();
+  }
+
+  Future<void> _loadPhone() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() => _phoneCtrl.text = prefs.getString(_phoneKey) ?? '');
+  }
+
+  Future<void> _saveChanges() async {
+    final name = _nameCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
+    if (name.isEmpty) {
+      showAppSnackBar(context, 'Full name cannot be empty');
+      return;
+    }
+
+    setState(() => _savingChanges = true);
+    try {
+      if (name != (_fbUser?.displayName ?? '')) {
+        await _fbUser?.updateDisplayName(name);
+        await _fbUser?.reload();
+        _fbUser = FirebaseAuth.instance.currentUser;
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_phoneKey, phone);
+      if (!mounted) return;
+      setState(() => _savingChanges = false);
+      showAppSnackBar(context, 'Profile updated');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _savingChanges = false);
+      showAppSnackBar(context, 'Failed to save changes');
+    }
   }
 
   @override
@@ -80,6 +124,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (confirmed != true) return;
+
+    context.read<CartProvider>().clear();
+    context.read<SavedMedicinesProvider>().clear();
+    context.read<OrdersProvider>().clear();
+    await context.read<MedicalProfileProvider>().clear();
+    await ScheduleService.instance.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_phoneKey);
+
     await FirebaseAuth.instance.signOut();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
@@ -106,8 +159,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    // Deep Teal to Blue gradient matching your Medical Profile screenshot
-                    colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                    colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
                   ),
                 ),
                 child: SafeArea(
@@ -437,7 +489,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => showAppSnackBar(context, 'Coming soon'),
+              onPressed: _savingChanges ? null : _saveChanges,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -445,14 +497,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text(
-                'Save Changes',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: _savingChanges
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Save Changes',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ],
