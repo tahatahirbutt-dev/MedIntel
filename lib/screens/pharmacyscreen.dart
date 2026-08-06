@@ -1,8 +1,8 @@
-// import 'dart:convert';
-
 import 'package:flutter/material.dart';
-// import 'package:geolocator/geolocator.dart';
-// import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
+import 'package:med_intel/models/pharmacy.dart';
+import 'package:med_intel/services/mock_data.dart';
+import 'package:med_intel/services/pharmacy_location_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -37,10 +37,15 @@ class _PharmacyScreenState extends State<PharmacyScreen>
   late Map<String, bool> _medicineAvailability;
 
   bool _isLoading = true;
-  // bool _isNearbySearchLoading = false;
-  // final List<Map<String, dynamic>> _nearbyPharmacies = [];
-  // static const String _googleMapsApiKey = '<YOUR_GOOGLE_MAPS_API_KEY>';
   late final AnimationController _anim;
+
+  // Nearby pharmacies (free GPS + OpenStreetMap search)
+  bool _isSearchingNearby = false;
+  List<Pharmacy>? _nearbyPharmacies;
+  bool _nearbyIsFallback = false;
+  String? _nearbyErrorMessage;
+  VoidCallback? _nearbyErrorAction;
+  String? _nearbyErrorActionLabel;
 
   // Adjustable header layout values — tweak these to move the logo/text.
   final EdgeInsets _headerPadding = const EdgeInsets.fromLTRB(5, 30, 20, 20);
@@ -84,9 +89,10 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     });
   }
 
-  void _openDirections(String address) async {
-    final String googleMapsUrl =
-        "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}";
+  void _openDirections(String address, {double? latitude, double? longitude}) async {
+    final String googleMapsUrl = (latitude != null && longitude != null)
+        ? "https://www.google.com/maps/dir/?api=1&destination=$latitude,$longitude"
+        : "https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}";
     if (await canLaunchUrl(Uri.parse(googleMapsUrl))) {
       await launchUrl(
         Uri.parse(googleMapsUrl),
@@ -96,6 +102,77 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Could not open maps')));
+    }
+  }
+
+  Future<void> _findNearbyPharmacies() async {
+    setState(() {
+      _isSearchingNearby = true;
+      _nearbyErrorMessage = null;
+      _nearbyErrorAction = null;
+      _nearbyErrorActionLabel = null;
+    });
+
+    try {
+      final position = await PharmacyLocationService.getCurrentLocation();
+      debugPrint(
+        '[PharmacyLocationService] fix lat=${position.latitude} lng=${position.longitude} '
+        'accuracy=${position.accuracy}m provider=${position.isMocked ? "mocked" : "real"}',
+      );
+      var results = await PharmacyLocationService.fetchNearbyPharmacies(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+
+      bool isFallback = false;
+      if (results.isEmpty) {
+        isFallback = true;
+        final mockList = await MockDataService.getNearbyPharmacies(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+        results = PharmacyLocationService.sortByDistanceFrom(
+          mockList,
+          position.latitude,
+          position.longitude,
+        );
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _nearbyPharmacies = results;
+        _nearbyIsFallback = isFallback;
+        _isSearchingNearby = false;
+      });
+    } on LocationServiceDisabledException {
+      if (!mounted) return;
+      setState(() {
+        _isSearchingNearby = false;
+        _nearbyErrorMessage =
+            'Location services are turned off. Enable GPS to find nearby pharmacies.';
+        _nearbyErrorActionLabel = 'Open Settings';
+        _nearbyErrorAction = () => Geolocator.openLocationSettings();
+      });
+    } on LocationPermissionDeniedException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSearchingNearby = false;
+        _nearbyErrorMessage = e.forever
+            ? 'Location permission was permanently denied. Enable it from app settings.'
+            : 'Location permission is required to find nearby pharmacies.';
+        _nearbyErrorActionLabel = e.forever ? 'Open Settings' : 'Try Again';
+        _nearbyErrorAction = e.forever
+            ? () => Geolocator.openAppSettings()
+            : _findNearbyPharmacies;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSearchingNearby = false;
+        _nearbyErrorMessage = 'Something went wrong. Please try again.';
+        _nearbyErrorActionLabel = 'Try Again';
+        _nearbyErrorAction = _findNearbyPharmacies;
+      });
     }
   }
 
@@ -154,7 +231,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF1E40AF), Color(0xFF2563EB)],
+                    colors: [AppColors.headerGradientStart, AppColors.headerGradientEnd],
                   ),
                 ),
                 child: SafeArea(
@@ -175,6 +252,12 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                 if (_isLoading)
                   _buildSkeleton()
                 else ...[
+                  // ── SECTION 0: Nearby Pharmacies (free GPS search) ──
+                  _buildSectionHeader('Nearby Pharmacies'),
+                  const SizedBox(height: 12),
+                  _buildNearbySection(),
+                  const SizedBox(height: 28),
+
                   // ── SECTION 1: Reference Pharmacy (Template) ──
                   _buildSectionHeader('Reference Template'),
                   const SizedBox(height: 12),
@@ -186,7 +269,6 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   const SizedBox(height: 12),
                   _buildRegisterButton(),
                   const SizedBox(height: 16),
-                  // _buildNearbyPharmacySearchButton(),
                   const SizedBox(height: 28),
 
                   // ── SECTION 3: Registered Pharmacies ──
@@ -240,6 +322,292 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       decoration: BoxDecoration(
         color: AppColors.borderLight,
         borderRadius: BorderRadius.circular(18),
+      ),
+    );
+  }
+
+  Widget _buildNearbySection() {
+    if (_isSearchingNearby) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: const Column(
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(height: 12),
+            Text('Finding pharmacies near you…'),
+          ],
+        ),
+      );
+    }
+
+    if (_nearbyErrorMessage != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.dangerLight,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.danger.withOpacity(0.2)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.location_off_outlined, color: AppColors.danger, size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _nearbyErrorMessage!,
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.danger),
+                  ),
+                ),
+              ],
+            ),
+            if (_nearbyErrorAction != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _nearbyErrorAction,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  side: const BorderSide(color: AppColors.danger),
+                ),
+                child: Text(_nearbyErrorActionLabel ?? 'Try Again'),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    final results = _nearbyPharmacies;
+    if (results == null) {
+      return GestureDetector(
+        onTap: _findNearbyPharmacies,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.my_location_rounded,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Find pharmacies near me', style: AppTextStyles.titleMedium),
+                    Text(
+                      'Uses your device location — free, no account needed',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: AppColors.primary),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (results.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Text(
+          'No pharmacies found nearby.',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_nearbyIsFallback)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.infoLight,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.info.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.info, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Showing sample pharmacies — live data unavailable right now.',
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ...results.map(
+          (p) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildNearbyPharmacyCard(p),
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _findNearbyPharmacies,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Refresh'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNearbyPharmacyCard(Pharmacy pharmacy) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 12, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.local_pharmacy_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        pharmacy.name,
+                        style: AppTextStyles.headlineSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${pharmacy.distance.toStringAsFixed(1)} km away',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: _buildDetailRow(
+              icon: Icons.location_on_outlined,
+              label: 'Address',
+              value: pharmacy.address,
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _openDirections(
+                      pharmacy.address,
+                      latitude: pharmacy.latitude,
+                      longitude: pharmacy.longitude,
+                    ),
+                    icon: const Icon(Icons.map_outlined, size: 16),
+                    label: Text('Directions', style: AppTextStyles.labelLarge),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                if (pharmacy.phone != null) ...[
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _makePhoneCall(pharmacy.phone!),
+                      icon: const Icon(Icons.phone_outlined, size: 16),
+                      label: Text(
+                        'Call',
+                        style: AppTextStyles.labelLarge.copyWith(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -583,233 +951,6 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       ),
     );
   }
-
-  // Widget _buildNearbyPharmacySearchButton() {
-  //   return Material(
-  //     color: AppColors.secondaryLight,
-  //     borderRadius: BorderRadius.circular(14),
-  //     child: InkWell(
-  //       borderRadius: BorderRadius.circular(14),
-  //       onTap: _isNearbySearchLoading ? null : _scanNearbyPharmacies,
-  //       child: Container(
-  //         padding: const EdgeInsets.all(12),
-  //         child: Row(
-  //           children: [
-  //             Container(
-  //               width: 44,
-  //               height: 44,
-  //               decoration: BoxDecoration(
-  //                 color: AppColors.secondary.withOpacity(0.1),
-  //                 borderRadius: BorderRadius.circular(10),
-  //               ),
-  //               child: _isNearbySearchLoading
-  //                   ? const Center(
-  //                       child: SizedBox(
-  //                         width: 20,
-  //                         height: 20,
-  //                         child: CircularProgressIndicator(strokeWidth: 2.2),
-  //                       ),
-  //                     )
-  //                   : const Icon(
-  //                       Icons.search,
-  //                       color: AppColors.secondary,
-  //                       size: 22,
-  //                     ),
-  //             ),
-  //             const SizedBox(width: 12),
-  //             Expanded(
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Text(
-  //                     'Find nearby pharmacies',
-  //                     style: AppTextStyles.titleMedium,
-  //                   ),
-  //                   Text(
-  //                     'Search within 5 km of your current location',
-  //                     style: AppTextStyles.bodySmall,
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             const SizedBox(width: 8),
-  //             const Icon(Icons.chevron_right, color: AppColors.secondary),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // Future<void> _scanNearbyPharmacies() async {
-  //   setState(() {
-  //     _isNearbySearchLoading = true;
-  //   });
-
-  //   try {
-  //     final position = await _getCurrentLocation();
-  //     final uri =
-  //         Uri.parse('https://places.googleapis.com/v1/nearbySearch');
-  //     final response = await http.post(
-  //       uri,
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'X-Goog-Api-Key': _googleMapsApiKey,
-  //         'X-Goog-FieldMask':
-  //             'places.displayName,places.formattedAddress,places.location',
-  //       },
-  //       body: jsonEncode({
-  //         'includedTypes': ['pharmacy'],
-  //         'maxResultCount': 20,
-  //         'locationRestriction': {
-  //           'circle': {
-  //             'center': {
-  //               'latitude': position.latitude,
-  //               'longitude': position.longitude,
-  //             },
-  //             'radius': 5000.0,
-  //           },
-  //         },
-  //       }),
-  //     );
-
-  //     if (response.statusCode != 200) {
-  //       throw 'Failed to fetch nearby pharmacies: ${response.statusCode} ${response.reasonPhrase}';
-  //     }
-
-  //     final body = jsonDecode(response.body) as Map<String, dynamic>;
-  //     final rawPlaces = (body['places'] as List<dynamic>?) ?? [];
-  //     _nearbyPharmacies.clear();
-  //     _nearbyPharmacies.addAll(rawPlaces
-  //         .whereType<Map<String, dynamic>>()
-  //         .toList());
-
-  //     if (mounted) {
-  //       _showNearbyPharmaciesSheet();
-  //     }
-  //   } catch (error) {
-  //     if (!mounted) return;
-  //     final message = error is String ? error : error.toString();
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text(message)),
-  //     );
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() {
-  //         _isNearbySearchLoading = false;
-  //       });
-  //     }
-  //   }
-  // }
-
-  // Future<Position> _getCurrentLocation() async {
-  //   final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  //   if (!serviceEnabled) {
-  //     throw 'Location services are disabled. Please enable location services and try again.';
-  //   }
-
-  //   var permission = await Geolocator.checkPermission();
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //     if (permission == LocationPermission.denied) {
-  //       throw 'Location permission denied. Please allow location access.';
-  //     }
-  //   }
-
-  //   if (permission == LocationPermission.deniedForever) {
-  //     throw 'Location permission permanently denied. Open app settings and allow location access.';
-  //   }
-
-  //   return Geolocator.getCurrentPosition(
-  //     desiredAccuracy: LocationAccuracy.high,
-  //   );
-  // }
-
-  // void _showNearbyPharmaciesSheet() {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //     ),
-  //     builder: (context) {
-  //       return SafeArea(
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             const SizedBox(height: 16),
-  //             Container(
-  //               width: 40,
-  //               height: 4,
-  //               decoration: BoxDecoration(
-  //                 color: Colors.grey.shade400,
-  //                 borderRadius: BorderRadius.circular(2),
-  //               ),
-  //             ),
-  //             const SizedBox(height: 16),
-  //             Padding(
-  //               padding: const EdgeInsets.symmetric(horizontal: 20),
-  //               child: Row(
-  //                 children: [
-  //                   const Icon(Icons.local_pharmacy, color: Colors.blue),
-  //                   const SizedBox(width: 12),
-  //                   const Text(
-  //                     'Nearby pharmacies',
-  //                     style: TextStyle(
-  //                       fontSize: 18,
-  //                       fontWeight: FontWeight.w600,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             const SizedBox(height: 14),
-  //             if (_nearbyPharmacies.isEmpty)
-  //               const Padding(
-  //                 padding: EdgeInsets.all(20),
-  //                 child: Text('No pharmacies found within 5 km.'),
-  //               )
-  //             else
-  //               Flexible(
-  //                 child: ListView.separated(
-  //                   shrinkWrap: true,
-  //                   padding: const EdgeInsets.symmetric(
-  //                       horizontal: 20, vertical: 8),
-  //                   itemCount: _nearbyPharmacies.length,
-  //                   separatorBuilder: (_, __) => const Divider(height: 1),
-  //                   itemBuilder: (context, index) {
-  //                     final place = _nearbyPharmacies[index];
-  //                     final name = _extractDisplayName(place);
-  //                     final address = place['formattedAddress'] as String? ??
-  //                         'No address available';
-  //                     return ListTile(
-  //                       leading: const Icon(
-  //                         Icons.local_pharmacy_outlined,
-  //                         color: Colors.teal,
-  //                       ),
-  //                       title: Text(name),
-  //                       subtitle: Text(address),
-  //                     );
-  //                   },
-  //                 ),
-  //               ),
-  //             const SizedBox(height: 20),
-  //           ],
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
-  // String _extractDisplayName(Map<String, dynamic> place) {
-  //   final displayName = place['displayName'];
-  //   if (displayName is String) {
-  //     return displayName;
-  //   }
-  //   if (displayName is Map<String, dynamic>) {
-  //     return displayName['text'] as String? ?? 'Unknown Pharmacy';
-  //   }
-  //   return 'Unknown Pharmacy';
-  // }
 
   Widget _buildAvailabilitySection() {
     return Container(

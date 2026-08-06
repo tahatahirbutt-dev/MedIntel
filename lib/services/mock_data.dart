@@ -323,6 +323,8 @@ class MockDataService {
       },
       deliveryFee: 120,
       deliveryTime: 25,
+      latitude: 33.7180,
+      longitude: 73.0563,
     ),
     Pharmacy(
       id: 'pharm_002',
@@ -339,6 +341,8 @@ class MockDataService {
       },
       deliveryFee: 150,
       deliveryTime: 35,
+      latitude: 33.6931,
+      longitude: 73.0308,
     ),
     Pharmacy(
       id: 'pharm_003',
@@ -355,6 +359,8 @@ class MockDataService {
       },
       deliveryFee: 100,
       deliveryTime: 20,
+      latitude: 33.7108,
+      longitude: 73.0567,
     ),
   ];
 

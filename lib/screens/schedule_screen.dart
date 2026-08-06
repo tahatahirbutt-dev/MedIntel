@@ -1,6 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:med_intel/models/medicine_schedule.dart';
-import 'package:med_intel/services/firebase_schedule_service.dart';
+import 'package:med_intel/services/schedule_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -11,7 +11,7 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  final _scheduleService = FirebaseScheduleService();
+  final _scheduleService = ScheduleService.instance;
   late DateTime _selectedDate;
 
   @override
@@ -497,7 +497,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
                       final schedule = MedicineSchedule(
                         id: '',
-                        userId: '',
                         medicineName: medicineController.text.trim(),
                         dosage: dosageController.text.trim(),
                         times: selectedTimes,

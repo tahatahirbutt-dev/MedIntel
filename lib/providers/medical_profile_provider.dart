@@ -116,4 +116,17 @@ class MedicalProfileProvider extends ChangeNotifier {
     notifyListeners();
     _persist();
   }
+
+  /// Resets to neutral (non-demo) defaults for a new user on sign-out.
+  Future<void> clear() async {
+    _bloodType = '';
+    _height = '';
+    _weight = '';
+    _emergencyName = '';
+    _emergencyPhone = '';
+    _history = [];
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefsKey);
+  }
 }
