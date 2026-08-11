@@ -25,6 +25,7 @@ class MedicineDetailsScreen extends StatefulWidget {
 class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
   late Future<Map<String, dynamic>?> _medicineFuture;
   Map<String, dynamic>? _medicine;
+  bool _sideEffectsExpanded = false;
 
   @override
   void initState() {
@@ -397,24 +398,81 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.info_outline, color: AppColors.warning),
-                  const SizedBox(width: 8),
-                  Text('Common Side Effects', style: AppTextStyles.headlineMedium),
-                ],
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => setState(
+                  () => _sideEffectsExpanded = !_sideEffectsExpanded,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: AppColors.warning),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Common Side Effects',
+                        style: AppTextStyles.headlineMedium,
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: _sideEffectsExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: sideEffects.map((effect) {
-                  return Chip(
-                    label: Text(effect.toString()),
-                    backgroundColor: AppColors.warningLight,
-                    side: BorderSide(color: AppColors.warning.withOpacity(0.3)),
-                  );
-                }).toList(),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topCenter,
+                child: _sideEffectsExpanded
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: sideEffects.map((effect) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.circle,
+                                  size: 6,
+                                  color: AppColors.warning,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    effect.toString(),
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      )
+                    : Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: sideEffects.map((effect) {
+                          return Chip(
+                            label: Text(
+                              effect.toString(),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            backgroundColor: AppColors.warningLight,
+                            side: BorderSide(
+                              color: AppColors.warning.withOpacity(0.3),
+                            ),
+                          );
+                        }).toList(),
+                      ),
               ),
             ],
           ),
@@ -560,33 +618,49 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               ),
               const SizedBox(height: 12),
               ...alternatives.map((alt) {
+                final id = alt is Map ? alt['id']?.toString() : null;
+                final name =
+                    alt is Map ? (alt['name']?.toString() ?? '') : alt.toString();
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                      borderRadius: BorderRadius.circular(8),
-                      color: AppColors.primaryLight,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            alt.toString(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.labelLarge,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: id == null || id.isEmpty
+                        ? null
+                        : () => Navigator.pushNamed(
+                              context,
+                              AppNavigation.medicineDetails,
+                              arguments: {
+                                'medicineId': id,
+                                'medicineName': name,
+                              },
+                            ),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.primaryLight,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.labelLarge,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.arrow_forward,
-                          size: 16,
-                          color: AppColors.primary,
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.arrow_forward,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

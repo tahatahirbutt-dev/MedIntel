@@ -548,7 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildSmallCard(
+              child: _FeatureCard(
                 icon: Icons.document_scanner_outlined,
                 title: 'Scan prescription',
                 subtitle: 'Upload & analyze',
@@ -561,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildSmallCard(
+              child: _FeatureCard(
                 icon: Icons.schedule_outlined,
                 title: 'Medicine schedule',
                 subtitle: 'View doses & reminders',
@@ -578,7 +578,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildSmallCard(
+              child: _FeatureCard(
                 icon: Icons.health_and_safety_outlined,
                 title: 'Health tips',
                 subtitle: 'AI-powered insights',
@@ -591,10 +591,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildSmallCard(
+              child: _FeatureCard(
                 icon: Icons.local_pharmacy_outlined,
-                title: 'Register pharmacy',
-                subtitle: 'Register your stores',
+                title: 'Find and Register pharmacies',
+                subtitle: 'Find nearby pharmacies and register your stores',
                 color: AppColors.info,
                 onTap: () => Navigator.pushNamed(context, '/pharmacy'),
               ),
@@ -605,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildSmallCard(
+              child: _FeatureCard(
                 icon: Icons.rate_review_outlined,
                 title: 'Feedback',
                 subtitle: 'Share your experience',
@@ -618,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildSmallCard(
+              child: _FeatureCard(
                 icon: Icons.medical_services_outlined,
                 title: 'Medical profile',
                 subtitle: 'Your health records',
@@ -632,38 +632,88 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSmallCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+}
+
+class _FeatureCard extends StatefulWidget {
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  State<_FeatureCard> createState() => _FeatureCardState();
+}
+
+class _FeatureCardState extends State<_FeatureCard> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed != value) setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Material(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
+          elevation: _pressed ? 1 : 4,
+          shadowColor: widget.color.withOpacity(0.25),
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              height: 180,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.border),
               ),
-              child: Icon(icon, color: color, size: 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: widget.color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(widget.icon, color: widget.color, size: 22),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    widget.title,
+                    style: AppTextStyles.titleMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    widget.subtitle,
+                    style: AppTextStyles.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(title, style: AppTextStyles.titleMedium),
-            const SizedBox(height: 6),
-            Text(subtitle, style: AppTextStyles.bodySmall),
-          ],
+          ),
         ),
       ),
     );

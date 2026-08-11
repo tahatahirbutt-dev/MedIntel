@@ -138,7 +138,7 @@ class MedicineCatalogService {
 
     final map = _toMap(rows.first);
     map['alternatives'] = (await getAlternatives(idOrSlug))
-        .map((m) => m['name'] as String)
+        .map((m) => {'id': m['id'], 'name': m['name']})
         .toList();
     return map;
   }

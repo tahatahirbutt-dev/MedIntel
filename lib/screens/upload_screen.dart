@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:med_intel/screens/result_screen.dart';
-import 'package:med_intel/services/django_prescription_service.dart';
+// import 'package:med_intel/services/django_prescription_service.dart';
+import 'package:med_intel/services/mock_data.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class UploadScreen extends StatefulWidget {
@@ -77,9 +78,12 @@ class _UploadScreenState extends State<UploadScreen>
     _uploadAnim.forward();
 
     try {
-      final prescription = await DjangoPrescriptionService.scanPrescription(
-        _selectedImage!,
-      );
+      // Django/TrOCR integration — re-enable once the partner's endpoint is
+      // confirmed reachable (needs --dart-define=DJANGO_BASE_URL=...):
+      // final prescription = await DjangoPrescriptionService.scanPrescription(
+      //   _selectedImage!,
+      // );
+      final prescription = await MockDataService.getMockPrescription();
       if (!mounted) return;
       Navigator.push(
         context,
