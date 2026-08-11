@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:med_intel/providers/cart_provider.dart';
@@ -27,7 +25,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   static const _phoneKey = 'profile_phone_number';
 
-  File? _profileImage;
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
@@ -80,20 +77,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _phoneCtrl.dispose();
     _addressCtrl.dispose();
     super.dispose();
-  }
-
-  String get _initials {
-    final name = _fbUser?.displayName ?? '';
-    if (name.isEmpty) return '?';
-    final parts = name.trim().split(' ');
-    return parts.length >= 2
-        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
-        : parts[0][0].toUpperCase();
-  }
-
-  Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) setState(() => _profileImage = File(picked.path));
   }
 
   Future<void> _logout() async {
@@ -204,9 +187,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'My Profile',
-                                style: TextStyle(
+                              Text(
+                                _fbUser?.displayName ?? 'My Profile',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -237,8 +221,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildProfileCard(),
-                  const SizedBox(height: 16),
                   _buildQuickActions(),
                   const SizedBox(height: 16),
                   _buildPersonalInfoForm(),
@@ -254,113 +236,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppColors.primaryLight,
-                    backgroundImage: _profileImage != null
-                        ? FileImage(_profileImage!) as ImageProvider
-                        : (_fbUser?.photoURL != null
-                              ? NetworkImage(_fbUser!.photoURL!)
-                              : null),
-                    child: (_profileImage == null && _fbUser?.photoURL == null)
-                        ? Text(
-                            _initials,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _fbUser?.displayName ?? 'Guest User',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _fbUser?.email ?? 'No email available',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Divider(height: 1),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStat('0', 'Orders'),
-                Container(height: 30, width: 1, color: Colors.grey.shade300),
-                _buildStat('PKR 0', 'Saved'),
-                Container(height: 30, width: 1, color: Colors.grey.shade300),
-                _buildStat('2026', 'Member Since'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStat(String val, String label) {
-    return Column(
-      children: [
-        Text(
-          val,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
-        ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
-    );
-  }
-
   Widget _buildQuickActions() {
     return Column(
       children: [
         Row(
           children: [
             Expanded(
-              child: _buildActionBtn(
-                Icons.medical_services,
-                'Medical\nProfile',
-                Colors.blue,
-                () => Navigator.push(
+              child: _ActionCard(
+                icon: Icons.medical_services,
+                label: 'Medical\nProfile',
+                color: Colors.blue,
+                onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => const MedicalProfileScreen(),
@@ -370,11 +256,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildActionBtn(
-                Icons.receipt_long,
-                'Order\nHistory',
-                Colors.teal,
-                () => Navigator.push(
+              child: _ActionCard(
+                icon: Icons.receipt_long,
+                label: 'Order\nHistory',
+                color: Colors.teal,
+                onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const OrderHistoryScreen()),
                 ),
@@ -382,11 +268,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildActionBtn(
-                Icons.settings,
-                'Settings',
-                Colors.orange,
-                () => Navigator.push(
+              child: _ActionCard(
+                icon: Icons.settings,
+                label: 'Settings',
+                color: Colors.orange,
+                onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 ),
@@ -398,11 +284,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Row(
           children: [
             Expanded(
-              child: _buildActionBtn(
-                Icons.shopping_cart_outlined,
-                'My\nCart',
-                AppColors.primary,
-                () => Navigator.push(
+              child: _ActionCard(
+                icon: Icons.shopping_cart_outlined,
+                label: 'My\nCart',
+                color: AppColors.primary,
+                onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CartScreen()),
                 ),
@@ -410,11 +296,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildActionBtn(
-                Icons.bookmark_outline,
-                'Saved\nMedicines',
-                Colors.purple,
-                () => Navigator.push(
+              child: _ActionCard(
+                icon: Icons.bookmark_outline,
+                label: 'Saved\nMedicines',
+                color: Colors.purple,
+                onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => const SavedMedicinesScreen(),
@@ -427,36 +313,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildActionBtn(
-    IconData icon,
-    String label,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -588,6 +444,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatefulWidget {
+  const _ActionCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  State<_ActionCard> createState() => _ActionCardState();
+}
+
+class _ActionCardState extends State<_ActionCard> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed != value) setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          elevation: _pressed ? 1 : 4,
+          shadowColor: widget.color.withOpacity(0.25),
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              height: 124,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: widget.color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(widget.icon, color: widget.color, size: 24),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
