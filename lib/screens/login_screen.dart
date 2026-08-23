@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/services/auth_service.dart';
 import 'package:med_intel/screens/register_screen.dart';
 import 'package:med_intel/screens/forgot_password_screen.dart';
 import 'package:med_intel/screens/main_navigation.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/widgets/google_sign_in_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -20,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen>
   final _authService = AuthService();
 
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _obscurePass = true;
 
   late final AnimationController _headerAnim;
@@ -73,6 +77,23 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _loginWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      final user = await _authService.signInWithGoogle();
+      if (!mounted || user == null) return; // null = user cancelled the flow
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showError(e.toString());
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
+
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppColors.danger),
@@ -81,12 +102,13 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
           // ── Animated Header ─────────────────
-          _AnimatedHeader(controller: _headerAnim),
+          _AnimatedHeader(controller: _headerAnim, l10n: l10n),
 
           // ── Form Area ───────────────────────
           Expanded(
@@ -101,34 +123,34 @@ class _LoginScreenState extends State<LoginScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Welcome back', style: AppTextStyles.displaySmall),
+                        Text(l10n.loginWelcomeBack, style: AppTextStyles.displaySmall),
                         const SizedBox(height: 6),
                         Text(
-                          'Sign in to your Med Intel account',
+                          l10n.loginSubtitle,
                           style: AppTextStyles.bodyMedium,
                         ),
                         const SizedBox(height: 28),
 
                         AppTextField(
-                          label: 'Email address',
+                          label: l10n.loginEmailLabel,
                           hint: 'you@example.com',
                           controller: _emailCtrl,
                           prefixIcon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
                             if (v == null || v.trim().isEmpty)
-                              return 'Email is required';
+                              return l10n.loginEmailRequired;
                             if (!RegExp(
                               r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$',
                             ).hasMatch(v.trim()))
-                              return 'Enter a valid email';
+                              return l10n.loginEmailInvalid;
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
 
                         AppTextField(
-                          label: 'Password',
+                          label: l10n.commonPassword,
                           controller: _passCtrl,
                           prefixIcon: Icons.lock_outline,
                           obscureText: _obscurePass,
@@ -144,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 setState(() => _obscurePass = !_obscurePass),
                           ),
                           validator: (v) => (v == null || v.isEmpty)
-                              ? 'Password is required'
+                              ? l10n.loginPasswordRequired
                               : null,
                         ),
 
@@ -158,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             ),
                             child: Text(
-                              'Forgot password?',
+                              l10n.loginForgotPassword,
                               style: AppTextStyles.labelMedium.copyWith(
                                 color: AppColors.primary,
                               ),
@@ -168,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen>
                         const SizedBox(height: 8),
 
                         AppPrimaryButton(
-                          label: 'Sign in',
+                          label: l10n.loginSignIn,
                           onPressed: _isLoading ? null : _login,
                           isLoading: _isLoading,
                         ),
@@ -181,19 +203,28 @@ class _LoginScreenState extends State<LoginScreen>
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                               ),
-                              child: Text('OR', style: AppTextStyles.bodySmall),
+                              child: Text(l10n.commonOr, style: AppTextStyles.bodySmall),
                             ),
                             const Expanded(child: Divider()),
                           ],
                         ),
                         const SizedBox(height: 20),
 
+                        GoogleSignInButton(
+                          label: l10n.loginContinueWithGoogle,
+                          isLoading: _isGoogleLoading,
+                          onPressed: (_isLoading || _isGoogleLoading)
+                              ? null
+                              : _loginWithGoogle,
+                        ),
+                        const SizedBox(height: 24),
+
                         Center(
                           child: RichText(
                             text: TextSpan(
                               style: AppTextStyles.bodyMedium,
                               children: [
-                                const TextSpan(text: "Don't have an account? "),
+                                TextSpan(text: l10n.loginNoAccount),
                                 WidgetSpan(
                                   child: GestureDetector(
                                     onTap: () => Navigator.push(
@@ -203,7 +234,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       ),
                                     ),
                                     child: Text(
-                                      'Sign up',
+                                      l10n.commonSignUp,
                                       style: AppTextStyles.labelLarge.copyWith(
                                         color: AppColors.primary,
                                         decoration: TextDecoration.underline,
@@ -232,7 +263,8 @@ class _LoginScreenState extends State<LoginScreen>
 // ── Animated Header Widget ──────────────────────
 class _AnimatedHeader extends StatelessWidget {
   final AnimationController controller;
-  const _AnimatedHeader({required this.controller});
+  final AppLocalizations l10n;
+  const _AnimatedHeader({required this.controller, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +344,7 @@ class _AnimatedHeader extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Medical cross logo
+                  // MedIntel logo
                   Container(
                     width: 72,
                     height: 72,
@@ -324,29 +356,28 @@ class _AnimatedHeader extends StatelessWidget {
                         width: 1.5,
                       ),
                     ),
-                    child: const Icon(
-                      Icons.medical_services_rounded,
-                      color: Colors.white,
-                      size: 36,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18.5),
+                      child: Image.asset(
+                        'assets/images/logo_mark.png',
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     'Med Intel',
-                    style: TextStyle(
-                      fontFamily: 'Outfit',
+                    style: GoogleFonts.outfit(
                       fontSize: 28,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
                       letterSpacing: -0.3,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Your smart pharmacy companion',
-                    style: TextStyle(
-                      fontFamily: 'DM Sans',
-                      fontSize: 13,
+                    l10n.loginTagline,
+                    style: AppTextStyles.bodySmall.copyWith(
                       color: Colors.white.withOpacity(0.8),
                     ),
                   ),

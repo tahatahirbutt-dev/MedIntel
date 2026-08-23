@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/models/pharmacy.dart';
 import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/providers/orders_provider.dart';
@@ -56,20 +57,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       });
     } catch (e) {
       setState(() => _isLoadingPharmacies = false);
-      _showErrorSnackBar('Error loading pharmacies: $e');
+      _showErrorSnackBar(AppLocalizations.of(context)!.checkoutErrorLoadingPharmacies(e.toString()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
+      appBar: AppBar(title: Text(l10n.checkoutTitle)),
       body: cart.isEmpty
           ? Center(
               child: Text(
-                'Your cart is empty',
+                l10n.cartEmptyTitle,
                 style: AppTextStyles.bodyMedium,
               ),
             )
@@ -77,17 +79,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               children: [
                 // Stepper
                 Expanded(
-                  child: _buildStepper(),
+                  child: _buildStepper(l10n),
                 ),
 
                 // Order Summary at Bottom
-                _buildOrderSummary(cart.subtotal),
+                _buildOrderSummary(cart.subtotal, l10n),
               ],
             ),
     );
   }
 
-  Widget _buildStepper() {
+  Widget _buildStepper(AppLocalizations l10n) {
     return SingleChildScrollView(
       child: Theme(
         data: Theme.of(context).copyWith(
@@ -105,32 +107,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           steps: [
             // Step 1: Delivery Details
             Step(
-              title: const Text('Delivery Details'),
-              content: _buildDeliveryDetailsStep(),
+              title: Text(l10n.checkoutStepDelivery),
+              content: _buildDeliveryDetailsStep(l10n),
               isActive: _currentStep >= 0,
               state: _currentStep > 0 ? StepState.complete : StepState.indexed,
             ),
 
             // Step 2: Select Pharmacy
             Step(
-              title: const Text('Select Pharmacy'),
-              content: _buildPharmacySelectionStep(),
+              title: Text(l10n.checkoutStepPharmacy),
+              content: _buildPharmacySelectionStep(l10n),
               isActive: _currentStep >= 1,
               state: _currentStep > 1 ? StepState.complete : StepState.indexed,
             ),
 
             // Step 3: Payment Method
             Step(
-              title: const Text('Payment Method'),
-              content: _buildPaymentMethodStep(),
+              title: Text(l10n.checkoutStepPayment),
+              content: _buildPaymentMethodStep(l10n),
               isActive: _currentStep >= 2,
               state: _currentStep > 2 ? StepState.complete : StepState.indexed,
             ),
 
             // Step 4: Confirmation
             Step(
-              title: const Text('Confirmation'),
-              content: _buildConfirmationStep(),
+              title: Text(l10n.checkoutStepConfirmation),
+              content: _buildConfirmationStep(l10n),
               isActive: _currentStep >= 3,
               state: _currentStep > 3 ? StepState.complete : StepState.indexed,
             ),
@@ -140,19 +142,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildDeliveryDetailsStep() {
+  Widget _buildDeliveryDetailsStep(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         Text(
-          'Delivery Type',
+          l10n.checkoutDeliveryType,
           style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         RadioListTile(
-          title: const Text('Home Delivery'),
-          subtitle: Text('PKR ${_deliveryFee.toStringAsFixed(0)} delivery fee'),
+          title: Text(l10n.checkoutHomeDelivery),
+          subtitle: Text(l10n.checkoutDeliveryFeeLabel(_deliveryFee.toStringAsFixed(0))),
           value: 'delivery',
           groupValue: _deliveryType,
           onChanged: (value) {
@@ -160,8 +162,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           },
         ),
         RadioListTile(
-          title: const Text('Pickup from Pharmacy'),
-          subtitle: const Text('Free pickup'),
+          title: Text(l10n.checkoutPickupFromPharmacy),
+          subtitle: Text(l10n.checkoutFreePickup),
           value: 'pickup',
           groupValue: _deliveryType,
           onChanged: (value) {
@@ -179,7 +181,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         const SizedBox(height: 24),
         Text(
-          'Delivery Address',
+          l10n.checkoutDeliveryAddress,
           style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
@@ -187,7 +189,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           controller: _deliveryAddressController,
           maxLines: 3,
           decoration: InputDecoration(
-            hintText: 'Enter your full delivery address',
+            hintText: l10n.checkoutAddressHint,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -198,14 +200,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         const SizedBox(height: 16),
         Text(
-          'Phone Number',
+          l10n.profilePhoneNumber,
           style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _phoneNumberController,
           decoration: InputDecoration(
-            hintText: 'Your phone number',
+            hintText: l10n.checkoutPhoneHint,
             prefixIcon: const Icon(Icons.phone),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -219,7 +221,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPharmacySelectionStep() {
+  Widget _buildPharmacySelectionStep(AppLocalizations l10n) {
     if (_isLoadingPharmacies) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -229,18 +231,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       children: [
         const SizedBox(height: 16),
         Text(
-          'Choose a Pharmacy',
+          l10n.checkoutChoosePharmacy,
           style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         ..._nearbyPharmacies.map((pharmacy) {
-          return _buildPharmacyOption(pharmacy);
+          return _buildPharmacyOption(pharmacy, l10n);
         }),
       ],
     );
   }
 
-  Widget _buildPharmacyOption(Pharmacy pharmacy) {
+  Widget _buildPharmacyOption(Pharmacy pharmacy, AppLocalizations l10n) {
     final isSelected = _selectedPharmacy == pharmacy.id;
 
     return Card(
@@ -300,7 +302,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ],
                   ),
                   Text(
-                    '${pharmacy.deliveryTime} mins',
+                    l10n.checkoutDeliveryTimeMins(pharmacy.deliveryTime),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
@@ -315,32 +317,32 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentMethodStep() {
+  Widget _buildPaymentMethodStep(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         Text(
-          'Payment Method',
+          l10n.checkoutStepPayment,
           style: AppTextStyles.headlineSmall,
         ),
         const SizedBox(height: 12),
         _buildPaymentOption(
           'cash',
-          'Cash on Delivery',
-          'Pay when order arrives',
+          l10n.checkoutPayCash,
+          l10n.checkoutPayCashDesc,
           Icons.money,
         ),
         _buildPaymentOption(
           'card',
-          'Credit/Debit Card',
-          'Secure payment',
+          l10n.checkoutPayCard,
+          l10n.checkoutPayCardDesc,
           Icons.credit_card,
         ),
         _buildPaymentOption(
           'wallet',
-          'Digital Wallet',
-          'Use your Med Intel wallet',
+          l10n.checkoutPayWallet,
+          l10n.checkoutPayWalletDesc,
           Icons.account_balance_wallet,
         ),
         const SizedBox(height: 16),
@@ -357,7 +359,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Your payment information is secure and encrypted',
+                  l10n.checkoutPaymentSecureNote,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -388,9 +390,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildConfirmationStep() {
+  Widget _buildConfirmationStep(AppLocalizations l10n) {
     if (_nearbyPharmacies.isEmpty) {
-      return const Center(child: Text('No pharmacies available'));
+      return Center(child: Text(l10n.checkoutNoPharmaciesAvailable));
     }
 
     final selectedPharmacy = _nearbyPharmacies.firstWhere(
@@ -408,22 +410,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildConfirmationRow('Pharmacy', selectedPharmacy.name),
+                _buildConfirmationRow(l10n.checkoutConfirmPharmacy, selectedPharmacy.name),
                 _buildConfirmationRow(
-                  'Delivery Type',
-                  _deliveryType == 'delivery' ? 'Home Delivery' : 'Pickup',
+                  l10n.checkoutDeliveryType,
+                  _deliveryType == 'delivery' ? l10n.checkoutHomeDelivery : l10n.checkoutPickup,
                 ),
                 _buildConfirmationRow(
-                  'Address',
+                  l10n.checkoutConfirmAddress,
                   _deliveryAddressController.text,
                 ),
                 _buildConfirmationRow(
-                  'Phone',
+                  l10n.checkoutConfirmPhone,
                   _phoneNumberController.text,
                 ),
                 _buildConfirmationRow(
-                  'Payment Method',
-                  _getPaymentMethodName(_selectedPaymentMethod),
+                  l10n.checkoutStepPayment,
+                  _getPaymentMethodName(_selectedPaymentMethod, l10n),
                 ),
               ],
             ),
@@ -443,7 +445,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Your order is ready to be placed!',
+                  l10n.checkoutReadyToPlace,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.success,
                   ),
@@ -480,7 +482,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildOrderSummary(double subtotal) {
+  Widget _buildOrderSummary(double subtotal, AppLocalizations l10n) {
     final total = subtotal + _deliveryFee + _tax;
 
     return Container(
@@ -494,9 +496,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Subtotal', style: AppTextStyles.bodyMedium),
+              Text(l10n.cartSubtotal, style: AppTextStyles.bodyMedium),
               Text(
-                'PKR ${subtotal.toStringAsFixed(2)}',
+                l10n.commonPricePkr(subtotal.toStringAsFixed(2)),
                 style: AppTextStyles.bodyMedium,
               ),
             ],
@@ -505,9 +507,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Delivery', style: AppTextStyles.bodyMedium),
+              Text(l10n.checkoutDeliveryLabel, style: AppTextStyles.bodyMedium),
               Text(
-                'PKR ${_deliveryFee.toStringAsFixed(2)}',
+                l10n.commonPricePkr(_deliveryFee.toStringAsFixed(2)),
                 style: AppTextStyles.bodyMedium,
               ),
             ],
@@ -516,9 +518,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Tax', style: AppTextStyles.bodyMedium),
+              Text(l10n.cartTax, style: AppTextStyles.bodyMedium),
               Text(
-                'PKR ${_tax.toStringAsFixed(2)}',
+                l10n.commonPricePkr(_tax.toStringAsFixed(2)),
                 style: AppTextStyles.bodyMedium,
               ),
             ],
@@ -527,9 +529,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Total', style: AppTextStyles.headlineMedium),
+              Text(l10n.checkoutTotal, style: AppTextStyles.headlineMedium),
               Text(
-                'PKR ${total.toStringAsFixed(2)}',
+                l10n.commonPricePkr(total.toStringAsFixed(2)),
                 style: AppTextStyles.headlineMedium.copyWith(
                   color: AppColors.success,
                 ),
@@ -538,7 +540,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
           const SizedBox(height: 12),
           AppPrimaryButton(
-            label: _currentStep == 3 ? 'Place Order' : 'Continue',
+            label: _currentStep == 3 ? l10n.checkoutPlaceOrder : l10n.checkoutContinue,
             onPressed: _currentStep == 3 ? _placeOrder : null,
           ),
         ],
@@ -562,20 +564,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   bool _validateCurrentStep() {
+    final l10n = AppLocalizations.of(context)!;
     switch (_currentStep) {
       case 0:
         if (_deliveryAddressController.text.isEmpty) {
-          _showErrorSnackBar('Please enter delivery address');
+          _showErrorSnackBar(l10n.checkoutEnterAddressError);
           return false;
         }
         if (_phoneNumberController.text.isEmpty) {
-          _showErrorSnackBar('Please enter phone number');
+          _showErrorSnackBar(l10n.checkoutEnterPhoneError);
           return false;
         }
         return true;
       case 1:
         if (_selectedPharmacy == null) {
-          _showErrorSnackBar('Please select a pharmacy');
+          _showErrorSnackBar(l10n.checkoutSelectPharmacyError);
           return false;
         }
         return true;
@@ -587,6 +590,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _placeOrder() {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final orderId = 'ORD-${now.millisecondsSinceEpoch}';
     final cart = context.read<CartProvider>();
@@ -622,20 +626,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Order Placed!'),
+        title: Text(l10n.checkoutOrderPlacedTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.check_circle, size: 60, color: AppColors.success),
             const SizedBox(height: 16),
             Text(
-              'Your order has been placed successfully!',
+              l10n.checkoutOrderPlacedBody,
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Order ID: $orderId',
+              l10n.checkoutOrderIdLabel(orderId),
               textAlign: TextAlign.center,
               style: AppTextStyles.labelLarge,
             ),
@@ -648,21 +652,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Navigator.pop(context);
               Navigator.popUntil(context, (route) => route.isFirst);
             },
-            child: const Text('Done'),
+            child: Text(l10n.checkoutDone),
           ),
         ],
       ),
     );
   }
 
-  String _getPaymentMethodName(String method) {
+  String _getPaymentMethodName(String method, AppLocalizations l10n) {
     switch (method) {
       case 'cash':
-        return 'Cash on Delivery';
+        return l10n.checkoutPayCash;
       case 'card':
-        return 'Credit/Debit Card';
+        return l10n.checkoutPayCard;
       case 'wallet':
-        return 'Digital Wallet';
+        return l10n.checkoutPayWallet;
       default:
         return method;
     }

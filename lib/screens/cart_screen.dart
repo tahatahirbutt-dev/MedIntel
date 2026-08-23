@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/screens/checkout_screen.dart';
@@ -18,26 +19,27 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final cartItems = cart.items;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _buildHeader(cartItems.length),
+          _buildHeader(cartItems.length, l10n),
           Expanded(
             child: cartItems.isEmpty
-                ? _buildEmptyCart()
+                ? _buildEmptyCart(l10n)
                 : ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
                       for (int i = 0; i < cartItems.length; i++)
-                        _buildCartItemCard(cartItems[i], i),
+                        _buildCartItemCard(cartItems[i], i, l10n),
                       const SizedBox(height: 20),
-                      _buildSummarySection(cartItems),
+                      _buildSummarySection(cartItems, l10n),
                       const SizedBox(height: 20),
-                      _buildTermsCheckbox(),
+                      _buildTermsCheckbox(l10n),
                       const SizedBox(height: 20),
-                      _buildCheckoutButton(),
+                      _buildCheckoutButton(l10n),
                       const SizedBox(height: 20),
                     ],
                   ),
@@ -47,7 +49,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildEmptyCart() {
+  Widget _buildEmptyCart(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -66,17 +68,17 @@ class _CartScreenState extends State<CartScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Your cart is empty',
+            l10n.cartEmptyTitle,
             style: AppTextStyles.headlineMedium,
           ),
           const SizedBox(height: 8),
           Text(
-            'Add medicines to get started',
+            l10n.cartEmptyBody,
             style: AppTextStyles.bodyMedium,
           ),
           const SizedBox(height: 32),
           AppPrimaryButton(
-            label: 'Continue Shopping',
+            label: l10n.cartContinueShopping,
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -84,7 +86,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildCartItemCard(CartItem item, int index) {
+  Widget _buildCartItemCard(CartItem item, int index, AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -108,7 +110,7 @@ class _CartScreenState extends State<CartScreen> {
                     Text(item.name, style: AppTextStyles.titleMedium),
                     const SizedBox(height: 4),
                     Text(
-                      'Dosage: ${item.dosage}',
+                      l10n.commonDosageLabel(item.dosage),
                       style: AppTextStyles.bodySmall,
                     ),
                   ],
@@ -174,7 +176,7 @@ class _CartScreenState extends State<CartScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'PKR ${(item.price * item.quantity).toStringAsFixed(2)}',
+                    l10n.commonPricePkr((item.price * item.quantity).toStringAsFixed(2)),
                     style: AppTextStyles.titleMedium.copyWith(
                       color: AppColors.success,
                       fontSize: 16,
@@ -182,7 +184,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'PKR ${item.price}/unit',
+                    l10n.cartPricePerUnit(item.price.toString()),
                     style: AppTextStyles.bodySmall,
                   ),
                 ],
@@ -194,7 +196,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildSummarySection(List<CartItem> cartItems) {
+  Widget _buildSummarySection(List<CartItem> cartItems, AppLocalizations l10n) {
     final subtotal = cartItems.fold<double>(
       0,
       (sum, item) => sum + (item.price * item.quantity),
@@ -212,16 +214,16 @@ class _CartScreenState extends State<CartScreen> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildSummaryRow('Subtotal', 'PKR ${subtotal.toStringAsFixed(2)}'),
+          _buildSummaryRow(l10n.cartSubtotal, l10n.commonPricePkr(subtotal.toStringAsFixed(2))),
           _buildSummaryRow(
-            'Delivery Fee',
-            'PKR ${deliveryFee.toStringAsFixed(2)}',
+            l10n.cartDeliveryFee,
+            l10n.commonPricePkr(deliveryFee.toStringAsFixed(2)),
           ),
-          _buildSummaryRow('Tax', 'PKR ${tax.toStringAsFixed(2)}'),
+          _buildSummaryRow(l10n.cartTax, l10n.commonPricePkr(tax.toStringAsFixed(2))),
           const Divider(height: 20),
           _buildSummaryRow(
-            'Total Amount',
-            'PKR ${total.toStringAsFixed(2)}',
+            l10n.cartTotalAmount,
+            l10n.commonPricePkr(total.toStringAsFixed(2)),
             isBold: true,
             isTotal: true,
           ),
@@ -261,7 +263,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildTermsCheckbox() {
+  Widget _buildTermsCheckbox(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -278,18 +280,18 @@ class _CartScreenState extends State<CartScreen> {
           text: TextSpan(
             style: AppTextStyles.bodySmall,
             children: [
-              const TextSpan(text: 'I agree to the '),
+              TextSpan(text: l10n.registerAgreeToThe),
               TextSpan(
-                text: 'Terms & Conditions',
+                text: l10n.registerTermsConditions,
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
                 ),
               ),
-              const TextSpan(text: ' and '),
+              TextSpan(text: l10n.registerAnd),
               TextSpan(
-                text: 'Privacy Policy',
+                text: l10n.registerPrivacyPolicy,
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -303,9 +305,9 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildCheckoutButton() {
+  Widget _buildCheckoutButton(AppLocalizations l10n) {
     return AppPrimaryButton(
-      label: 'Proceed to Checkout',
+      label: l10n.cartProceedCheckout,
       onPressed: _agreeToTerms ? _proceedToCheckout : null,
       icon: Icons.shopping_bag_outlined,
     );
@@ -316,20 +318,21 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   void _removeItem(CartItem item) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Remove Item', style: AppTextStyles.headlineSmall),
+        title: Text(l10n.cartRemoveItemTitle, style: AppTextStyles.headlineSmall),
         content: Text(
-          'Remove ${item.name} from cart?',
+          l10n.cartRemoveItemBody(item.name),
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -337,14 +340,14 @@ class _CartScreenState extends State<CartScreen> {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Item removed from cart'),
+                  content: Text(l10n.cartItemRemoved),
                   behavior: SnackBarBehavior.floating,
                   backgroundColor: AppColors.success,
                 ),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('Remove'),
+            child: Text(l10n.cartRemoveButton),
           ),
         ],
       ),
@@ -352,20 +355,21 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   void _clearCart() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Clear Cart', style: AppTextStyles.headlineSmall),
+        title: Text(l10n.cartClearTitle, style: AppTextStyles.headlineSmall),
         content: Text(
-          'Remove all items from cart?',
+          l10n.cartClearBody,
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -373,7 +377,7 @@ class _CartScreenState extends State<CartScreen> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('Clear'),
+            child: Text(l10n.commonClear),
           ),
         ],
       ),
@@ -391,7 +395,7 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  Widget _buildHeader(int itemCount) {
+  Widget _buildHeader(int itemCount, AppLocalizations l10n) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -420,9 +424,9 @@ class _CartScreenState extends State<CartScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Shopping Cart',
-                  style: TextStyle(
+                Text(
+                  l10n.cartTitle,
+                  style: const TextStyle(
                     fontFamily: 'Outfit',
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -430,7 +434,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
                 Text(
-                  '$itemCount item${itemCount != 1 ? 's' : ''}',
+                  l10n.savedMedicinesItemCount(itemCount),
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,

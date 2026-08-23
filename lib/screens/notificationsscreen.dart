@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/models/medicine_schedule.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/providers/orders_provider.dart';
@@ -54,6 +55,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final orders = context.watch<OrdersProvider>().orders;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -67,21 +69,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 missedDoses: missedSnap.data ?? const [],
                 endingSoon: endingSnap.data ?? const [],
                 orders: orders,
+                l10n: l10n,
               );
               _latestNotifications = notifications;
 
               final unread = notifications
                   .where((n) => !(n['read'] as bool))
                   .length;
-              final grouped = _groupNotifications(notifications);
+              final grouped = _groupNotifications(notifications, l10n);
 
               return Column(
                 children: [
-                  _buildHeader(unread),
+                  _buildHeader(unread, l10n),
                   Expanded(
                     child: notifications.isEmpty
-                        ? _buildEmptyState()
-                        : _buildGroupedList(grouped),
+                        ? _buildEmptyState(l10n)
+                        : _buildGroupedList(grouped, l10n),
                   ),
                 ],
               );
@@ -98,6 +101,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     required List<Map<String, dynamic>> missedDoses,
     required List<MedicineSchedule> endingSoon,
     required List<Map<String, dynamic>> orders,
+    required AppLocalizations l10n,
   }) {
     final items = <Map<String, dynamic>>[];
 
@@ -106,9 +110,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (_dismissedIds.contains(id)) continue;
       items.add({
         'id': id,
-        'title': 'Missed dose',
-        'message':
-            'You missed ${dose['dosage']} of ${dose['medicineName']} at ${dose['time']}.',
+        'title': l10n.notifMissedDoseTitle,
+        'message': l10n.notifMissedDoseMessage(
+          dose['dosage'] as String? ?? '',
+          dose['medicineName'] as String? ?? '',
+          dose['time'] as String? ?? '',
+        ),
         'type': 'missed',
         'timestamp': dose['scheduledTime'] as DateTime,
         'read': _readIds.contains(id),
@@ -122,10 +129,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final daysLeft = schedule.remainingDays;
       items.add({
         'id': id,
-        'title': 'Refill reminder',
+        'title': l10n.notifRefillReminderTitle,
         'message': daysLeft <= 0
-            ? '${schedule.medicineName} schedule ends today. Refill soon to stay on track.'
-            : '${schedule.medicineName} schedule ends in $daysLeft day${daysLeft == 1 ? '' : 's'}. Time to refill.',
+            ? l10n.notifRefillEndsToday(schedule.medicineName)
+            : l10n.notifRefillEndsInDays(daysLeft, schedule.medicineName),
         'type': 'reminder',
         'timestamp': DateTime.now(),
         'read': _readIds.contains(id),
@@ -140,16 +147,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final orderId = order['id'] as String? ?? '';
       final (title, message) = switch (status) {
         'delivered' => (
-          'Order Delivered',
-          'Your order $orderId has been delivered. Enjoy!',
+          l10n.notifOrderDeliveredTitle,
+          l10n.notifOrderDeliveredMessage(orderId),
         ),
         'cancelled' => (
-          'Order Cancelled',
-          'Your order $orderId was cancelled.',
+          l10n.notifOrderCancelledTitle,
+          l10n.notifOrderCancelledMessage(orderId),
         ),
         _ => (
-          'Order Placed',
-          'Your order $orderId has been placed and is being prepared.',
+          l10n.notifOrderPlacedTitle,
+          l10n.notifOrderPlacedMessage(orderId),
         ),
       };
 
@@ -185,37 +192,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return DateTime.now();
   }
 
-  String _groupLabel(DateTime dt) {
+  String _groupLabel(DateTime dt, AppLocalizations l10n) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(dt.year, dt.month, dt.day);
-    if (day == today) return 'Today';
-    if (day == today.subtract(const Duration(days: 1))) return 'Yesterday';
-    return 'Earlier';
+    if (day == today) return l10n.notifGroupToday;
+    if (day == today.subtract(const Duration(days: 1))) return l10n.notifGroupYesterday;
+    return l10n.notifGroupEarlier;
   }
 
-  String _timeAgo(DateTime dt) {
+  String _timeAgo(DateTime dt, AppLocalizations l10n) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
-    if (diff.inHours < 24)
-      return '${diff.inHours} hr${diff.inHours == 1 ? '' : 's'} ago';
-    if (diff.inDays < 2) return 'Yesterday';
-    return '${diff.inDays} days ago';
+    if (diff.inMinutes < 1) return l10n.notifJustNow;
+    if (diff.inMinutes < 60) return l10n.notifMinutesAgo(diff.inMinutes);
+    if (diff.inHours < 24) return l10n.notifHoursAgo(diff.inHours);
+    if (diff.inDays < 2) return l10n.notifGroupYesterday;
+    return l10n.notifDaysAgo(diff.inDays);
   }
 
   Map<String, List<Map<String, dynamic>>> _groupNotifications(
     List<Map<String, dynamic>> notifications,
+    AppLocalizations l10n,
   ) {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     for (final n in notifications) {
-      final group = _groupLabel(n['timestamp'] as DateTime);
+      final group = _groupLabel(n['timestamp'] as DateTime, l10n);
       grouped.putIfAbsent(group, () => []).add(n);
     }
     return grouped;
   }
 
-  Widget _buildHeader(int unreadCount) {
+  Widget _buildHeader(int unreadCount, AppLocalizations l10n) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -233,9 +240,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 Row(
                   children: [
-                    const Text(
-                      'Notifications',
-                      style: TextStyle(
+                    Text(
+                      l10n.notifTitle,
+                      style: const TextStyle(
                         fontFamily: 'Outfit',
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -254,7 +261,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          '$unreadCount new',
+                          l10n.notifUnreadBadge(unreadCount),
                           style: const TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 11,
@@ -269,8 +276,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   unreadCount > 0
-                      ? '$unreadCount unread notifications'
-                      : 'All caught up!',
+                      ? l10n.notifUnreadCount(unreadCount)
+                      : l10n.notifAllCaughtUp,
                   style: TextStyle(
                     fontFamily: 'DM Sans',
                     fontSize: 13,
@@ -281,9 +288,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ),
           if (unreadCount > 0)
-            _buildHeaderAction(Icons.done_all, 'Mark all read', _markAllRead),
+            _buildHeaderAction(Icons.done_all, l10n.notifMarkAllRead, _markAllRead),
           const SizedBox(width: 6),
-          _buildHeaderAction(Icons.delete_outline, 'Clear', _clearAll),
+          _buildHeaderAction(Icons.delete_outline, l10n.commonClear, _clearAll),
         ],
       ),
     );
@@ -306,9 +313,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildGroupedList(Map<String, List<Map<String, dynamic>>> grouped) {
+  Widget _buildGroupedList(Map<String, List<Map<String, dynamic>>> grouped, AppLocalizations l10n) {
     // Keep a stable, chronological group order regardless of Map iteration order.
-    const order = ['Today', 'Yesterday', 'Earlier'];
+    final List<String> order = [l10n.notifGroupToday, l10n.notifGroupYesterday, l10n.notifGroupEarlier];
     final keys = order.where(grouped.containsKey).toList();
 
     return ListView(
@@ -329,7 +336,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
               ),
             ),
-            ...entryValue.map(_buildNotificationCard),
+            ...entryValue.map((n) => _buildNotificationCard(n, l10n)),
             const SizedBox(height: 8),
           ],
         );
@@ -337,7 +344,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(Map<String, dynamic> n) {
+  Widget _buildNotificationCard(Map<String, dynamic> n, AppLocalizations l10n) {
     final isUnread = !(n['read'] as bool);
     final type = n['type'] as String;
     final config = _typeConfig(type);
@@ -446,7 +453,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               Row(
                                 children: [
                                   Text(
-                                    _timeAgo(n['timestamp'] as DateTime),
+                                    _timeAgo(n['timestamp'] as DateTime, l10n),
                                     style: AppTextStyles.bodySmall.copyWith(
                                       color: AppColors.textMuted,
                                       fontSize: 11,
@@ -457,7 +464,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     GestureDetector(
                                       onTap: () => _markDoseTaken(n),
                                       child: Text(
-                                        'Mark as taken',
+                                        l10n.notifMarkAsTaken,
                                         style: AppTextStyles.bodySmall.copyWith(
                                           color: AppColors.primary,
                                           fontWeight: FontWeight.w700,
@@ -483,7 +490,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -501,9 +508,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Text("You're all caught up!", style: AppTextStyles.headlineMedium),
+          Text(l10n.notifEmptyTitle, style: AppTextStyles.headlineMedium),
           const SizedBox(height: 8),
-          Text('No notifications right now.', style: AppTextStyles.bodyMedium),
+          Text(l10n.notifEmptyBody, style: AppTextStyles.bodyMedium),
         ],
       ),
     );
@@ -565,23 +572,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _markDoseTaken(Map<String, dynamic> n) async {
+    final l10n = AppLocalizations.of(context)!;
     final doseId = n['doseId'] as String?;
     if (doseId == null) return;
     try {
       await _scheduleService.markDoseAsTaken(doseId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✓ Marked as taken'),
+        SnackBar(
+          content: Text(l10n.notifMarkedAsTakenSnack),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(l10n.homeGenericError(e.toString()))));
     }
   }
 
@@ -599,30 +607,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _dismiss(String id) {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _dismissedIds.add(id));
     _persistReadState();
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Notification removed')));
+    ).showSnackBar(SnackBar(content: Text(l10n.notifRemoved)));
   }
 
   void _clearAll() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Clear all notifications?',
+          l10n.notifClearAllTitle,
           style: AppTextStyles.headlineMedium,
         ),
         content: Text(
-          'This cannot be undone.',
+          l10n.commonCannotBeUndone,
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -635,7 +645,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text('Clear all'),
+            child: Text(l10n.notifClearAllButton),
           ),
         ],
       ),

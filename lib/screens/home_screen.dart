@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/screens/upload_screen.dart';
 import 'package:med_intel/screens/schedule_screen.dart';
 import 'package:med_intel/screens/health_insights_screen.dart';
@@ -54,11 +55,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.userChanges(),
       builder: (context, snapshot) {
+        final l10n = AppLocalizations.of(context)!;
         final user = snapshot.data ?? FirebaseAuth.instance.currentUser;
         final userName = _formatUserName(user);
         final welcomeText = userName.isEmpty
-            ? 'Welcome back!'
-            : 'Welcome back, $userName!';
+            ? l10n.homeWelcomeBack
+            : l10n.homeWelcomeBackName(userName);
 
         return Container(
           decoration: const BoxDecoration(
@@ -88,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Track your medicines, insights and appointments in one place.',
+                l10n.homeHeaderSubtitle,
                 style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70),
               ),
             ],
@@ -114,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
         limit: 10,
       ), // fetch more so we can show up to 5 after filtering
       builder: (context, snapshot) {
+        final l10n = AppLocalizations.of(context)!;
         if (snapshot.hasError) {
           return Container(
             padding: const EdgeInsets.all(18),
@@ -136,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             child: Text(
-              'Error loading upcoming pills: ${snapshot.error}',
+              l10n.homeErrorLoadingPills(snapshot.error.toString()),
               style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
             ),
           );
@@ -194,13 +197,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Upcoming Pills',
+                          l10n.homeUpcomingPills,
                           style: AppTextStyles.titleMedium.copyWith(
                             color: Colors.white,
                           ),
                         ),
                         Text(
-                          'Don\'t miss your dose',
+                          l10n.homeDontMissDose,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Colors.white70,
                           ),
@@ -218,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      isLoading ? '…' : '${displayList.length} next',
+                      isLoading ? '…' : l10n.homeNextCount(displayList.length),
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.white,
                       ),
@@ -235,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   child: Text(
-                    'No upcoming pills',
+                    l10n.homeNoUpcomingPills,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: Colors.white70,
                     ),
@@ -245,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ...displayList.map((pill) {
                   final id = pill['id'] as String? ?? '';
                   final medicine =
-                      pill['medicineName'] as String? ?? 'Medicine';
+                      pill['medicineName'] as String? ?? l10n.commonMedicine;
                   final dosage = pill['dosage'] as String? ?? '';
                   final time = pill['time'] as String? ?? '';
                   final isOptimistic = _optimisticTaken.contains(id);
@@ -328,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                '$medicine marked as taken!',
+                                                l10n.homeMarkedAsTaken(medicine),
                                               ),
                                               backgroundColor:
                                                   AppColors.success,
@@ -351,7 +354,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             context,
                                           ).showSnackBar(
                                             SnackBar(
-                                              content: Text('Error: $e'),
+                                              content: Text(l10n.homeGenericError(e.toString())),
                                             ),
                                           );
                                         }
@@ -367,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  isOptimistic ? 'Taken' : 'Take',
+                                  isOptimistic ? l10n.homeTaken : l10n.homeTake,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -397,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     border: Border.all(color: Colors.white.withOpacity(0.3)),
                   ),
                   child: Text(
-                    'View all schedule',
+                    l10n.homeViewAllSchedule,
                     textAlign: TextAlign.center,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Colors.white,
@@ -417,6 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _service.getAllTodaysDosesStream(DateTime.now()),
       builder: (context, snapshot) {
+        final l10n = AppLocalizations.of(context)!;
         final isLoading = snapshot.connectionState == ConnectionState.waiting;
         final allDoses = snapshot.data ?? [];
         final upcomingDoses = allDoses
@@ -446,14 +450,14 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Today’s schedule', style: AppTextStyles.headlineSmall),
+              Text(l10n.homeTodaysSchedule, style: AppTextStyles.headlineSmall),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildBadge('Next dose', nextDose, AppColors.primary),
+                  _buildBadge(l10n.homeNextDose, nextDose, AppColors.primary),
                   const SizedBox(width: 10),
                   _buildBadge(
-                    'Completed',
+                    l10n.homeCompleted,
                     '$completedCount',
                     AppColors.success,
                   ),
@@ -469,7 +473,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   child: Text(
-                    'No medicine doses scheduled for today.',
+                    l10n.homeNoDosesToday,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textMuted,
                     ),
@@ -480,15 +484,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: allDoses.map((dose) {
                     final medicine =
-                        dose['medicineName'] as String? ?? 'Medicine';
+                        dose['medicineName'] as String? ?? l10n.commonMedicine;
                     final dosage = dose['dosage'] as String? ?? '';
                     final time = dose['time'] as String? ?? '';
                     final isTaken = dose['isTaken'] as bool? ?? false;
 
+                    final line = l10n.homeDoseLine(medicine, dosage, time);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
-                        '• $medicine $dosage • $time${isTaken ? ' (taken)' : ''}',
+                        isTaken ? '$line ${l10n.homeTakenSuffix}' : line,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: isTaken
                               ? AppColors.textMuted
@@ -513,8 +518,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 10),
               Text(
                 allDoses.isEmpty
-                    ? 'No doses for today'
-                    : 'Adherence today: ${(allDoses.isEmpty ? 0 : (completedCount / allDoses.length * 100)).round()}%',
+                    ? l10n.homeNoDosesForToday
+                    : l10n.homeAdherenceToday((allDoses.isEmpty ? 0 : (completedCount / allDoses.length * 100)).round()),
                 style: AppTextStyles.bodySmall,
               ),
             ],
@@ -543,6 +548,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActionGrid(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Row(
@@ -550,8 +556,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _FeatureCard(
                 icon: Icons.document_scanner_outlined,
-                title: 'Scan prescription',
-                subtitle: 'Upload & analyze',
+                title: l10n.homeScanTitle,
+                subtitle: l10n.homeScanSubtitle,
                 color: AppColors.primary,
                 onTap: () => Navigator.push(
                   context,
@@ -563,8 +569,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _FeatureCard(
                 icon: Icons.schedule_outlined,
-                title: 'Medicine schedule',
-                subtitle: 'View doses & reminders',
+                title: l10n.homeScheduleTitle,
+                subtitle: l10n.homeScheduleSubtitle,
                 color: AppColors.secondary,
                 onTap: () => Navigator.push(
                   context,
@@ -580,8 +586,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _FeatureCard(
                 icon: Icons.health_and_safety_outlined,
-                title: 'Health tips',
-                subtitle: 'AI-powered insights',
+                title: l10n.homeHealthTipsTitle,
+                subtitle: l10n.homeHealthTipsSubtitle,
                 color: AppColors.success,
                 onTap: () => Navigator.push(
                   context,
@@ -593,8 +599,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _FeatureCard(
                 icon: Icons.local_pharmacy_outlined,
-                title: 'Find and Register pharmacies',
-                subtitle: 'Find nearby pharmacies and register your stores',
+                title: l10n.homePharmacyTitle,
+                subtitle: l10n.homePharmacySubtitle,
                 color: AppColors.info,
                 onTap: () => Navigator.pushNamed(context, '/pharmacy'),
               ),
@@ -607,8 +613,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _FeatureCard(
                 icon: Icons.rate_review_outlined,
-                title: 'Feedback',
-                subtitle: 'Share your experience',
+                title: l10n.homeFeedbackTitle,
+                subtitle: l10n.homeFeedbackSubtitle,
                 color: AppColors.warning,
                 onTap: () => Navigator.push(
                   context,
@@ -620,8 +626,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _FeatureCard(
                 icon: Icons.medical_services_outlined,
-                title: 'Medical profile',
-                subtitle: 'Your health records',
+                title: l10n.homeMedicalProfileTitle,
+                subtitle: l10n.homeMedicalProfileSubtitle,
                 color: AppColors.secondary,
                 onTap: () => Navigator.pushNamed(context, '/medical-profile'),
               ),
@@ -679,7 +685,7 @@ class _FeatureCardState extends State<_FeatureCard> {
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(20),
             child: Container(
-              height: 180,
+              height: AppFonts.isUrdu ? 198 : 180,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
@@ -726,7 +732,8 @@ class _InsightSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final insights = MockDataService.mockHealthInsights.take(2).toList();
-    
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -737,7 +744,7 @@ class _InsightSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Latest health insight', style: AppTextStyles.headlineSmall),
+          Text(l10n.homeLatestInsight, style: AppTextStyles.headlineSmall),
           const SizedBox(height: 14),
           ListView.builder(
             physics: const NeverScrollableScrollPhysics(),
@@ -764,7 +771,7 @@ class _InsightSection extends StatelessWidget {
           context,
           MaterialPageRoute(builder: (_) => const HealthInsightsScreen()),
         ),
-        child: const Text('View all insights'),
+        child: Text(AppLocalizations.of(context)!.homeViewAllInsights),
       ),
     );
   }

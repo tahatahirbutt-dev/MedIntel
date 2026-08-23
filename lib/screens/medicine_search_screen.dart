@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/services/medicine_catalog_service.dart';
@@ -83,10 +84,10 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
       }
     } on SocketException {
       _showErrorSnackBar(
-        'Network error: Please check your internet connection',
+        AppLocalizations.of(context)!.medSearchNetworkError,
       );
     } catch (e) {
-      _showErrorSnackBar('Error searching medicines: ${e.toString()}');
+      _showErrorSnackBar(AppLocalizations.of(context)!.medSearchErrorSearching(e.toString()));
     } finally {
       setState(() => _isSearching = false);
     }
@@ -148,21 +149,22 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _buildHeader(),
-          if (_hasQuery) _buildFiltersSection(),
+          _buildHeader(l10n),
+          if (_hasQuery) _buildFiltersSection(l10n),
           Expanded(
-            child: _hasQuery ? _buildSearchResults() : _buildEmptySearchState(),
+            child: _hasQuery ? _buildSearchResults(l10n) : _buildEmptySearchState(l10n),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -203,14 +205,14 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Medicine Search',
+                      l10n.medSearchTitle,
                       style: AppTextStyles.displaySmall.copyWith(
                         color: Colors.white,
                         fontSize: 20,
                       ),
                     ),
                     Text(
-                      'Find medicines, prices & details',
+                      l10n.medSearchSubtitle,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.white.withOpacity(0.85),
                       ),
@@ -232,7 +234,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
               controller: _searchController,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Search by name (e.g. Amoxicillin)...',
+                hintText: l10n.medSearchHint,
                 hintStyle: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textMuted,
                 ),
@@ -261,7 +263,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     );
   }
 
-  Widget _buildFiltersSection() {
+  Widget _buildFiltersSection(AppLocalizations l10n) {
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -269,7 +271,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Category', style: AppTextStyles.labelLarge),
+          Text(l10n.medSearchCategory, style: AppTextStyles.labelLarge),
           const SizedBox(height: 8),
           SizedBox(
             height: 36,
@@ -280,8 +282,9 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
               itemBuilder: (_, i) {
                 final category = _categories[i];
                 final isSelected = _selectedCategory == category;
+                final label = category == 'All' ? l10n.medSearchAllCategories : category;
                 return FilterChip(
-                  label: Text(category, style: const TextStyle(fontSize: 12)),
+                  label: Text(label, style: const TextStyle(fontSize: 12)),
                   selected: isSelected,
                   onSelected: (_) => _onCategoryChanged(category),
                   backgroundColor: AppColors.borderLight,
@@ -304,7 +307,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Text('Max price', style: AppTextStyles.labelLarge),
+              Text(l10n.medSearchMaxPrice, style: AppTextStyles.labelLarge),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -313,7 +316,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'PKR ${_priceRangeMax.toStringAsFixed(0)}',
+                  l10n.commonPricePkr(_priceRangeMax.toStringAsFixed(0)),
                   style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.primary,
                     fontSize: 13,
@@ -342,7 +345,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     );
   }
 
-  Widget _buildEmptySearchState() {
+  Widget _buildEmptySearchState(AppLocalizations l10n) {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -369,13 +372,13 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Search for medicines',
+                l10n.medSearchEmptyTitle,
                 style: AppTextStyles.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Look up dosage, pricing, and add items to your cart before visiting a pharmacy.',
+                l10n.medSearchEmptyBody,
                 style: AppTextStyles.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -387,10 +390,10 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Recent searches', style: AppTextStyles.headlineSmall),
+              Text(l10n.medSearchRecentSearches, style: AppTextStyles.headlineSmall),
               TextButton(
                 onPressed: () => setState(() => _searchHistory.clear()),
-                child: const Text('Clear all'),
+                child: Text(l10n.notifClearAllButton),
               ),
             ],
           ),
@@ -414,7 +417,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
           ),
         ],
         const SizedBox(height: 24),
-        Text('Popular searches', style: AppTextStyles.headlineSmall),
+        Text(l10n.medSearchPopularSearches, style: AppTextStyles.headlineSmall),
         const SizedBox(height: 10),
         ...['Amoxicillin', 'Metformin', 'Ibuprofen'].map((name) {
           return Card(
@@ -446,7 +449,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     );
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(AppLocalizations l10n) {
     if (_isSearching) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
@@ -456,16 +459,16 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     if (_filteredResults.isEmpty && _searchResults.isNotEmpty) {
       return _buildEmptyResultState(
         icon: Icons.filter_list_outlined,
-        title: 'No medicines match your filters',
-        subtitle: 'Try adjusting category or price range',
+        title: l10n.medSearchNoFilterMatch,
+        subtitle: l10n.medSearchAdjustFilters,
       );
     }
 
     if (_filteredResults.isEmpty) {
       return _buildEmptyResultState(
         icon: Icons.medical_information_outlined,
-        title: 'No medicines found',
-        subtitle: 'Try a different name or spelling',
+        title: l10n.medSearchNoResults,
+        subtitle: l10n.medSearchTryDifferentName,
       );
     }
 
@@ -474,7 +477,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: _filteredResults.length,
       itemBuilder: (context, index) {
-        return _buildMedicineResultCard(_filteredResults[index]);
+        return _buildMedicineResultCard(_filteredResults[index], l10n);
       },
     );
   }
@@ -505,7 +508,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
     );
   }
 
-  Widget _buildMedicineResultCard(Map<String, dynamic> medicine) {
+  Widget _buildMedicineResultCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
@@ -524,12 +527,12 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          medicine['name'] ?? 'Unknown',
+                          medicine['name'] ?? l10n.commonUnknown,
                           style: AppTextStyles.headlineSmall,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          medicine['category'] ?? 'General',
+                          medicine['category'] ?? l10n.medSearchGeneralCategory,
                           style: AppTextStyles.bodySmall,
                         ),
                       ],
@@ -546,7 +549,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                       border: Border.all(color: AppColors.success.withOpacity(0.3)),
                     ),
                     child: Text(
-                      'PKR ${medicine['price'] ?? 0}',
+                      l10n.commonPricePkr((medicine['price'] ?? 0).toString()),
                       style: AppTextStyles.labelLarge.copyWith(
                         color: AppColors.success,
                         fontSize: 13,
@@ -557,7 +560,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                medicine['description'] ?? 'No description',
+                medicine['description'] ?? l10n.medSearchNoDescription,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyMedium,
@@ -565,9 +568,9 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildMetaChip('Dosage', medicine['dosage'] ?? 'N/A'),
+                  _buildMetaChip(l10n.medSearchDosageLabel, medicine['dosage'] ?? l10n.commonNotAvailable),
                   const SizedBox(width: 8),
-                  _buildMetaChip('Frequency', medicine['frequency'] ?? 'N/A'),
+                  _buildMetaChip(l10n.resultFrequency, medicine['frequency'] ?? l10n.commonNotAvailable),
                 ],
               ),
               const SizedBox(height: 14),
@@ -577,7 +580,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _navigateToMedicineDetails(medicine),
                       icon: const Icon(Icons.info_outline, size: 18),
-                      label: const Text('Details'),
+                      label: Text(l10n.commonDetails),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 44),
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -589,7 +592,7 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () => _addToCart(medicine),
                       icon: const Icon(Icons.add_shopping_cart, size: 18),
-                      label: const Text('Add'),
+                      label: Text(l10n.commonAdd),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(0, 44),
                         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -632,16 +635,17 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
   }
 
   void _addToCart(Map<String, dynamic> medicine) {
+    final l10n = AppLocalizations.of(context)!;
     context.read<CartProvider>().addItem(
       id: medicine['id']?.toString() ?? '',
-      name: medicine['name']?.toString() ?? 'Unknown',
+      name: medicine['name']?.toString() ?? l10n.commonUnknown,
       price: (medicine['price'] as num?)?.toDouble() ?? 0.0,
-      dosage: medicine['dosage']?.toString() ?? 'N/A',
+      dosage: medicine['dosage']?.toString() ?? l10n.commonNotAvailable,
     );
     showAppSnackBar(
       context,
-      '${medicine['name']} added to cart',
-      actionLabel: 'View Cart',
+      l10n.commonAddedToCart(medicine['name']?.toString() ?? l10n.commonUnknown),
+      actionLabel: l10n.commonViewCart,
       onAction: () => Navigator.pushNamed(context, AppNavigation.cart),
     );
   }

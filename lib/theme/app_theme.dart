@@ -59,73 +59,119 @@ class AppColors {
   static const generalBg = Color(0xFFEFF6FF);
 }
 
+/// Global switch flipped by [LocaleProvider] whenever the active language
+/// changes, so every [AppTextStyles] getter can pick a script-appropriate
+/// font without threading a [Locale]/[BuildContext] through every call site.
+class AppFonts {
+  AppFonts._();
+  static bool isUrdu = false;
+}
+
 class AppTextStyles {
   AppTextStyles._();
 
-  static TextStyle get displayLarge => GoogleFonts.outfit(
+  // Headings use Outfit for English, Noto Nastaliq Urdu (the standard Urdu
+  // calligraphic style) for Urdu; body text mirrors the same split with
+  // DM Sans. Nastaliq needs more vertical breathing room than Latin faces,
+  // so line heights are bumped slightly when active.
+  static TextStyle Function({
+    required double fontSize,
+    required FontWeight fontWeight,
+    Color? color,
+    double? letterSpacing,
+    double? height,
+  })
+  get _heading => AppFonts.isUrdu ? GoogleFonts.notoNastaliqUrdu : GoogleFonts.outfit;
+
+  static TextStyle Function({
+    required double fontSize,
+    required FontWeight fontWeight,
+    Color? color,
+    double? letterSpacing,
+    double? height,
+  })
+  get _body => AppFonts.isUrdu ? GoogleFonts.notoNastaliqUrdu : GoogleFonts.dmSans;
+
+  // Every getter below sets an explicit `height` for Urdu instead of leaving
+  // it null. Leaving it null means the TextStyle inherits whatever height
+  // the ambient DefaultTextStyle happens to have (usually bodyMedium's) —
+  // that inheritance chain was silently applying bodyMedium's tall Urdu
+  // line-height to unrelated one-line labels elsewhere in the app, which
+  // overflowed several fixed-height cards. Each style is self-contained now.
+  static TextStyle get displayLarge => _heading(
     fontSize: 32,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: AppFonts.isUrdu ? null : -0.5,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get displayMedium => GoogleFonts.outfit(
+  static TextStyle get displayMedium => _heading(
     fontSize: 26,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: AppFonts.isUrdu ? null : -0.3,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get displaySmall => GoogleFonts.outfit(
+  static TextStyle get displaySmall => _heading(
     fontSize: 22,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get headlineMedium => GoogleFonts.outfit(
+  static TextStyle get headlineMedium => _heading(
     fontSize: 18,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get headlineSmall => GoogleFonts.outfit(
+  static TextStyle get headlineSmall => _heading(
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get titleMedium => GoogleFonts.dmSans(
+  static TextStyle get titleMedium => _body(
     fontSize: 15,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get bodyLarge => GoogleFonts.dmSans(
+  static TextStyle get bodyLarge => _body(
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
-    height: 1.6,
+    height: AppFonts.isUrdu ? 1.7 : 1.6,
   );
-  static TextStyle get bodyMedium => GoogleFonts.dmSans(
+  static TextStyle get bodyMedium => _body(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
-    height: 1.5,
+    height: AppFonts.isUrdu ? 1.6 : 1.5,
   );
-  static TextStyle get bodySmall => GoogleFonts.dmSans(
+  static TextStyle get bodySmall => _body(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textMuted,
+    height: AppFonts.isUrdu ? 1.5 : null,
   );
-  static TextStyle get labelLarge => GoogleFonts.dmSans(
+  static TextStyle get labelLarge => _body(
     fontSize: 14,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get labelMedium => GoogleFonts.dmSans(
+  static TextStyle get labelMedium => _body(
     fontSize: 12,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
-    letterSpacing: 0.3,
+    letterSpacing: AppFonts.isUrdu ? null : 0.3,
+    height: AppFonts.isUrdu ? 1.4 : null,
   );
-  static TextStyle get buttonText => GoogleFonts.dmSans(
+  static TextStyle get buttonText => _body(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.2,
+    letterSpacing: AppFonts.isUrdu ? null : 0.2,
+    height: AppFonts.isUrdu ? 1.3 : null,
   );
 }
 

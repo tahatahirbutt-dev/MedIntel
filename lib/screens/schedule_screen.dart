@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/models/medicine_schedule.dart';
 import 'package:med_intel/services/schedule_service.dart';
 import 'package:med_intel/theme/app_theme.dart';
@@ -22,67 +23,71 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _addSchedule(MedicineSchedule schedule) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await _scheduleService.createSchedule(schedule);
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✓ Schedule added successfully!'),
+        SnackBar(
+          content: Text(l10n.scheduleAddedSuccess),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(l10n.homeGenericError(e.toString())), backgroundColor: Colors.red),
       );
     }
   }
 
   Future<void> _deleteSchedule(String id) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await _scheduleService.deleteSchedule(id);
       if (!mounted) return;
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Schedule deleted')));
+      ).showSnackBar(SnackBar(content: Text(l10n.scheduleDeleted)));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(l10n.homeGenericError(e.toString()))));
     }
   }
 
   Future<void> _markAsTaken(String doseId) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       await _scheduleService.markDoseAsTaken(doseId);
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✓ Marked as taken'),
+        SnackBar(
+          content: Text(l10n.notifMarkedAsTakenSnack),
           backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text(l10n.homeGenericError(e.toString()))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Medicine Schedule'),
+        title: Text(l10n.scheduleTitle),
         elevation: 0,
         backgroundColor: AppColors.primary,
         centerTitle: true,
@@ -95,17 +100,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _buildDateSelector(),
+          _buildDateSelector(l10n),
           const SizedBox(height: 24),
-          _buildTodaysDoses(),
+          _buildTodaysDoses(l10n),
           const SizedBox(height: 24),
-          _buildSchedulesList(),
+          _buildSchedulesList(l10n),
         ],
       ),
     );
   }
 
-  Widget _buildDateSelector() {
+  Widget _buildDateSelector(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -116,7 +121,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Select Date', style: AppTextStyles.titleMedium),
+          Text(l10n.scheduleSelectDate, style: AppTextStyles.titleMedium),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -140,7 +145,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildTodaysDoses() {
+  Widget _buildTodaysDoses(AppLocalizations l10n) {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _scheduleService.getTodaysDosesStream(_selectedDate),
       builder: (context, snapshot) {
@@ -157,7 +162,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
             child: Center(
               child: Text(
-                'No medicines scheduled for today',
+                l10n.scheduleNoMedicinesToday,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textMuted,
                 ),
@@ -170,16 +175,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Today\'s Doses', style: AppTextStyles.headlineSmall),
+            Text(l10n.scheduleTodaysDoses, style: AppTextStyles.headlineSmall),
             const SizedBox(height: 12),
-            ...doses.map((dose) => _buildDoseCard(dose)),
+            ...doses.map((dose) => _buildDoseCard(dose, l10n)),
           ],
         );
       },
     );
   }
 
-  Widget _buildDoseCard(Map<String, dynamic> dose) {
+  Widget _buildDoseCard(Map<String, dynamic> dose, AppLocalizations l10n) {
     final isTaken = dose['isTaken'] as bool;
     final time = dose['time'] as String;
 
@@ -222,7 +227,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ),
                 Text(
-                  '${dose['dosage']} at $time',
+                  l10n.scheduleDosageAtTime(dose['dosage'].toString(), time),
                   style: AppTextStyles.bodySmall,
                 ),
               ],
@@ -248,7 +253,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildSchedulesList() {
+  Widget _buildSchedulesList(AppLocalizations l10n) {
     return StreamBuilder<List<MedicineSchedule>>(
       stream: _scheduleService.getActiveSchedulesStream(),
       builder: (context, snapshot) {
@@ -265,7 +270,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
             child: Center(
               child: Text(
-                'No medicine schedules yet.\nTap + to add one.',
+                l10n.scheduleEmptySchedules,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: AppColors.textMuted,
@@ -279,16 +284,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Your Schedules', style: AppTextStyles.headlineSmall),
+            Text(l10n.scheduleYourSchedules, style: AppTextStyles.headlineSmall),
             const SizedBox(height: 12),
-            ...schedules.map((schedule) => _buildScheduleCard(schedule)),
+            ...schedules.map((schedule) => _buildScheduleCard(schedule, l10n)),
           ],
         );
       },
     );
   }
 
-  Widget _buildScheduleCard(MedicineSchedule schedule) {
+  Widget _buildScheduleCard(MedicineSchedule schedule, AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -315,20 +320,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Remove schedule'),
-                      content: const Text(
-                        'Do you want to remove this schedule completely?',
+                      title: Text(l10n.scheduleRemoveTitle),
+                      content: Text(
+                        l10n.scheduleRemoveBody,
                       ),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(false),
-                          child: const Text('Cancel'),
+                          child: Text(l10n.commonCancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(true),
-                          child: const Text(
-                            'Remove',
-                            style: TextStyle(color: Colors.red),
+                          child: Text(
+                            l10n.cartRemoveButton,
+                            style: const TextStyle(color: Colors.red),
                           ),
                         ),
                       ],
@@ -378,7 +383,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            '${schedule.remainingDays} days remaining',
+            l10n.scheduleDaysRemaining(schedule.remainingDays),
             style: AppTextStyles.bodySmall.copyWith(
               color: schedule.remainingDays > 3
                   ? AppColors.success
@@ -391,6 +396,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _showAddScheduleModal() {
+    final l10n = AppLocalizations.of(context)!;
     final medicineController = TextEditingController();
     final dosageController = TextEditingController();
     final durationController = TextEditingController(text: '7');
@@ -417,14 +423,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Add Medicine Schedule',
+                  l10n.scheduleAddModalTitle,
                   style: AppTextStyles.headlineSmall,
                 ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: medicineController,
                   decoration: InputDecoration(
-                    labelText: 'Medicine Name',
+                    labelText: l10n.scheduleMedicineNameLabel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -434,7 +440,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 TextField(
                   controller: dosageController,
                   decoration: InputDecoration(
-                    labelText: 'Dosage (e.g., 500mg)',
+                    labelText: l10n.scheduleDosageLabel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -444,7 +450,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 TextField(
                   controller: durationController,
                   decoration: InputDecoration(
-                    labelText: 'Duration (days)',
+                    labelText: l10n.scheduleDurationLabel,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -452,7 +458,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 16),
-                Text('Select Times', style: AppTextStyles.labelLarge),
+                Text(l10n.scheduleSelectTimes, style: AppTextStyles.labelLarge),
                 const SizedBox(height: 12),
                 if (selectedTimes.isNotEmpty)
                   Wrap(
@@ -470,7 +476,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   onPressed: () =>
                       _selectTime(context, selectedTimes, setState),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add Time'),
+                  label: Text(l10n.scheduleAddTime),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -485,9 +491,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           selectedTimes.isEmpty ||
                           duration <= 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text(
-                              'Please fill all fields with valid values',
+                              l10n.scheduleFillAllFields,
                             ),
                             backgroundColor: Colors.red,
                           ),
@@ -511,7 +517,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Create Schedule'),
+                    child: Text(l10n.scheduleCreateSchedule),
                   ),
                 ),
               ],

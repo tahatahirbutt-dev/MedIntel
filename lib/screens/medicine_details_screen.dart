@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/providers/saved_medicines_provider.dart';
@@ -51,9 +52,10 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Medicine Details'),
+        title: Text(l10n.medDetailTitle),
         actions: [
           Consumer<CartProvider>(
             builder: (context, cart, _) => Stack(
@@ -61,7 +63,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.shopping_cart_outlined),
-                  tooltip: 'View cart',
+                  tooltip: l10n.medDetailViewCartTooltip,
                   onPressed: () =>
                       Navigator.pushNamed(context, AppNavigation.cart),
                 ),
@@ -132,11 +134,11 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                     color: AppColors.danger,
                   ),
                   const SizedBox(height: 16),
-                  Text('Error: ${snapshot.error}', style: AppTextStyles.bodyMedium),
+                  Text(l10n.homeGenericError(snapshot.error.toString()), style: AppTextStyles.bodyMedium),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => setState(_loadMedicine),
-                    child: const Text('Retry'),
+                    child: Text(l10n.medDetailRetry),
                   ),
                 ],
               ),
@@ -154,7 +156,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                     color: AppColors.textMuted,
                   ),
                   const SizedBox(height: 16),
-                  Text('Medicine not found', style: AppTextStyles.bodyMedium),
+                  Text(l10n.medDetailNotFound, style: AppTextStyles.bodyMedium),
                 ],
               ),
             );
@@ -166,40 +168,40 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Card with Medicine Name and Basic Info
-                _buildHeaderCard(medicine),
+                _buildHeaderCard(medicine, l10n),
 
                 // Price and Availability
-                _buildPriceAvailabilityCard(medicine),
+                _buildPriceAvailabilityCard(medicine, l10n),
 
                 // Description
-                _buildDescriptionCard(medicine),
+                _buildDescriptionCard(medicine, l10n),
 
                 // Dosage & Frequency Information
-                _buildDosageCard(medicine),
+                _buildDosageCard(medicine, l10n),
 
                 // Side Effects
-                _buildSideEffectsCard(medicine),
+                _buildSideEffectsCard(medicine, l10n),
 
                 // Serious Side Effects Warning
                 if (medicine['seriousSideEffects'] != null &&
                     (medicine['seriousSideEffects'] as List).isNotEmpty)
-                  _buildSeriousWarningCard(medicine),
+                  _buildSeriousWarningCard(medicine, l10n),
 
                 // Warnings and Precautions
                 if (medicine['warnings'] != null &&
                     (medicine['warnings'] as List).isNotEmpty)
-                  _buildWarningsCard(medicine),
+                  _buildWarningsCard(medicine, l10n),
 
                 // Alternatives
                 if (medicine['alternatives'] != null &&
                     (medicine['alternatives'] as List).isNotEmpty)
-                  _buildAlternativesCard(medicine),
+                  _buildAlternativesCard(medicine, l10n),
 
                 // Chemical Information
-                _buildChemicalInfoCard(medicine),
+                _buildChemicalInfoCard(medicine, l10n),
 
                 // Action Buttons
-                _buildActionButtons(medicine),
+                _buildActionButtons(medicine, l10n),
 
                 const SizedBox(height: 30),
               ],
@@ -210,7 +212,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildHeaderCard(Map<String, dynamic> medicine) {
+  Widget _buildHeaderCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -232,7 +234,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              medicine['category'] ?? 'Medication',
+              medicine['category'] ?? l10n.medDetailCategoryFallback,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -244,7 +246,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
 
           // Medicine Name
           Text(
-            medicine['name'] ?? 'Unknown',
+            medicine['name'] ?? l10n.commonUnknown,
             style: const TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -255,7 +257,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
 
           // Dosage
           Text(
-            'Dosage: ${medicine['dosage'] ?? 'N/A'}',
+            l10n.commonDosageLabel(medicine['dosage'] ?? l10n.commonNotAvailable),
             style: const TextStyle(fontSize: 16, color: Colors.white70),
           ),
         ],
@@ -263,7 +265,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildPriceAvailabilityCard(Map<String, dynamic> medicine) {
+  Widget _buildPriceAvailabilityCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
@@ -275,10 +277,10 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Price', style: AppTextStyles.labelLarge),
+                  Text(l10n.medDetailPrice, style: AppTextStyles.labelLarge),
                   const SizedBox(height: 4),
                   Text(
-                    'PKR ${medicine['price']?.toString() ?? 'N/A'}',
+                    l10n.commonPricePkr(medicine['price']?.toString() ?? l10n.commonNotAvailable),
                     style: AppTextStyles.displaySmall.copyWith(
                       color: AppColors.success,
                     ),
@@ -289,7 +291,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Availability', style: AppTextStyles.labelLarge),
+                    Text(l10n.medDetailAvailability, style: AppTextStyles.labelLarge),
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -302,7 +304,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                         border: Border.all(color: AppColors.success.withOpacity(0.3)),
                       ),
                       child: Text(
-                        'In Stock',
+                        l10n.medDetailInStock,
                         style: AppTextStyles.labelLarge.copyWith(
                           color: AppColors.success,
                         ),
@@ -318,7 +320,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildDescriptionCard(Map<String, dynamic> medicine) {
+  Widget _buildDescriptionCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
@@ -327,10 +329,10 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Description', style: AppTextStyles.headlineMedium),
+              Text(l10n.medDetailDescription, style: AppTextStyles.headlineMedium),
               const SizedBox(height: 12),
               Text(
-                medicine['description'] ?? 'No description available',
+                medicine['description'] ?? l10n.medDetailNoDescription,
                 style: AppTextStyles.bodyLarge.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -342,7 +344,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildDosageCard(Map<String, dynamic> medicine) {
+  Widget _buildDosageCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Card(
@@ -351,11 +353,11 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Usage Information', style: AppTextStyles.headlineMedium),
+              Text(l10n.medDetailUsageInfo, style: AppTextStyles.headlineMedium),
               const SizedBox(height: 16),
-              _buildDosageRow('Dosage:', medicine['dosage'] ?? 'N/A'),
-              _buildDosageRow('Frequency:', medicine['frequency'] ?? 'N/A'),
-              _buildDosageRow('Duration:', medicine['duration'] ?? 'N/A'),
+              _buildDosageRow(l10n.medDetailDosageRowLabel, medicine['dosage'] ?? l10n.commonNotAvailable),
+              _buildDosageRow(l10n.medDetailFrequencyRowLabel, medicine['frequency'] ?? l10n.commonNotAvailable),
+              _buildDosageRow(l10n.medDetailDurationRowLabel, medicine['duration'] ?? l10n.commonNotAvailable),
             ],
           ),
         ),
@@ -385,7 +387,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildSideEffectsCard(Map<String, dynamic> medicine) {
+  Widget _buildSideEffectsCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     final sideEffects = medicine['sideEffects'] as List? ?? [];
 
     if (sideEffects.isEmpty) return const SizedBox.shrink();
@@ -409,7 +411,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Common Side Effects',
+                        l10n.medDetailCommonSideEffects,
                         style: AppTextStyles.headlineMedium,
                       ),
                     ),
@@ -481,7 +483,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildSeriousWarningCard(Map<String, dynamic> medicine) {
+  Widget _buildSeriousWarningCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     final seriousEffects = medicine['seriousSideEffects'] as List? ?? [];
 
     if (seriousEffects.isEmpty) return const SizedBox.shrink();
@@ -500,7 +502,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                   const Icon(Icons.warning, color: AppColors.danger),
                   const SizedBox(width: 8),
                   Text(
-                    'Serious Side Effects',
+                    l10n.medDetailSeriousSideEffects,
                     style: AppTextStyles.headlineMedium.copyWith(
                       color: AppColors.danger,
                     ),
@@ -509,7 +511,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Seek immediate medical attention if you experience:',
+                l10n.medDetailSeekAttention,
                 style: AppTextStyles.labelLarge.copyWith(
                   color: AppColors.danger,
                 ),
@@ -541,7 +543,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildWarningsCard(Map<String, dynamic> medicine) {
+  Widget _buildWarningsCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     final warnings = medicine['warnings'] as List? ?? [];
 
     if (warnings.isEmpty) return const SizedBox.shrink();
@@ -561,7 +563,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                     color: AppColors.warning,
                   ),
                   const SizedBox(width: 8),
-                  Text('Warnings & Precautions', style: AppTextStyles.headlineMedium),
+                  Text(l10n.medDetailWarningsPrecautions, style: AppTextStyles.headlineMedium),
                 ],
               ),
               const SizedBox(height: 12),
@@ -596,7 +598,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildAlternativesCard(Map<String, dynamic> medicine) {
+  Widget _buildAlternativesCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     final alternatives = medicine['alternatives'] as List? ?? [];
 
     if (alternatives.isEmpty) return const SizedBox.shrink();
@@ -612,7 +614,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Alternative Medicines', style: AppTextStyles.headlineMedium),
+                  Text(l10n.medDetailAlternativeMedicines, style: AppTextStyles.headlineMedium),
                   const Icon(Icons.swap_vert, color: AppColors.primary),
                 ],
               ),
@@ -672,7 +674,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildChemicalInfoCard(Map<String, dynamic> medicine) {
+  Widget _buildChemicalInfoCard(Map<String, dynamic> medicine, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Card(
@@ -681,7 +683,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Chemical Information', style: AppTextStyles.headlineMedium),
+              Text(l10n.medDetailChemicalInfo, style: AppTextStyles.headlineMedium),
               const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,10 +692,10 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Chemical Formula', style: AppTextStyles.bodySmall),
+                        Text(l10n.medDetailChemicalFormula, style: AppTextStyles.bodySmall),
                         const SizedBox(height: 4),
                         Text(
-                          medicine['chemicalFormula'] ?? 'N/A',
+                          medicine['chemicalFormula'] ?? l10n.commonNotAvailable,
                           style: AppTextStyles.labelLarge.copyWith(
                             fontFamily: 'Courier',
                           ),
@@ -711,7 +713,7 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '⚠️ This is for informational purposes only. Always consult with a healthcare professional before taking any medicine.',
+                  l10n.medDetailDisclaimer,
                   style: AppTextStyles.bodySmall,
                 ),
               ),
@@ -722,13 +724,13 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
     );
   }
 
-  Widget _buildActionButtons(Map<String, dynamic> medicine) {
+  Widget _buildActionButtons(Map<String, dynamic> medicine, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         children: [
           AppPrimaryButton(
-            label: 'Add to Cart',
+            label: l10n.medDetailAddToCart,
             icon: Icons.add_shopping_cart,
             onPressed: () => _addToCart(medicine),
           ),
@@ -739,48 +741,51 @@ class _MedicineDetailsScreenState extends State<MedicineDetailsScreen> {
   }
 
   void _addToCart(Map<String, dynamic> medicine) {
+    final l10n = AppLocalizations.of(context)!;
     context.read<CartProvider>().addItem(
       id: medicine['id']?.toString() ?? widget.medicineId,
-      name: medicine['name']?.toString() ?? 'Unknown',
+      name: medicine['name']?.toString() ?? l10n.commonUnknown,
       price: (medicine['price'] as num?)?.toDouble() ?? 0.0,
-      dosage: medicine['dosage']?.toString() ?? 'N/A',
+      dosage: medicine['dosage']?.toString() ?? l10n.commonNotAvailable,
     );
     showAppSnackBar(
       context,
-      '${medicine['name']} added to cart',
-      actionLabel: 'View Cart',
+      l10n.commonAddedToCart(medicine['name']?.toString() ?? l10n.commonUnknown),
+      actionLabel: l10n.commonViewCart,
       onAction: () => Navigator.pushNamed(context, AppNavigation.cart),
     );
   }
 
   void _saveMedicine(Map<String, dynamic> medicine) {
+    final l10n = AppLocalizations.of(context)!;
     final saved = context.read<SavedMedicinesProvider>();
     final id = medicine['id']?.toString() ?? widget.medicineId;
     final wasSaved = saved.isSaved(id);
     saved.toggle(medicine);
     showAppSnackBar(
       context,
-      wasSaved ? 'Removed from saved medicines' : 'Medicine saved',
-      actionLabel: 'View Saved',
+      wasSaved ? l10n.medDetailRemovedFromSaved : l10n.medDetailSaved,
+      actionLabel: l10n.medDetailViewSaved,
       onAction: () =>
           Navigator.pushNamed(context, AppNavigation.savedMedicines),
     );
   }
 
   void _shareMedicineInfo(Map<String, dynamic> medicine) {
-    final name = medicine['name']?.toString() ?? 'Medicine';
-    final dosage = medicine['dosage']?.toString() ?? 'N/A';
+    final l10n = AppLocalizations.of(context)!;
+    final name = medicine['name']?.toString() ?? l10n.commonMedicine;
+    final dosage = medicine['dosage']?.toString() ?? l10n.commonNotAvailable;
     final price = medicine['price'];
     final description = medicine['description']?.toString() ?? '';
 
     final buffer = StringBuffer()
       ..writeln(name)
-      ..writeln('Dosage: $dosage')
-      ..writeln('Price: PKR ${price ?? 'N/A'}');
+      ..writeln(l10n.commonDosageLabel(dosage))
+      ..writeln(l10n.commonPricePkr((price ?? l10n.commonNotAvailable).toString()));
     if (description.isNotEmpty) {
       buffer.writeln('\n$description');
     }
-    buffer.writeln('\nShared via MedIntel');
+    buffer.writeln('\n${l10n.medDetailShareFooter}');
 
     Share.share(buffer.toString(), subject: name);
   }

@@ -1,6 +1,6 @@
 {
-    "name": "med_intel",
-    "short_name": "med_intel",
+    "name": "MedIntel",
+    "short_name": "MedIntel",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

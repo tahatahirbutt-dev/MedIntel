@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/providers/medical_profile_provider.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/utils/snackbar_utils.dart';
@@ -39,6 +40,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profile = context.watch<MedicalProfileProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -54,7 +56,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
               IconButton(
                 icon: const Icon(Icons.ios_share_outlined, color: Colors.white),
                 onPressed: () => _exportProfile(profile),
-                tooltip: 'Export profile',
+                tooltip: l10n.medProfileExportTooltip,
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
@@ -73,9 +75,9 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Text(
-                          'Medical Profile',
-                          style: TextStyle(
+                        Text(
+                          l10n.medProfileTitle,
+                          style: const TextStyle(
                             fontFamily: 'Outfit',
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -84,7 +86,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Your personal health record',
+                          l10n.medProfileSubtitle,
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 13,
@@ -104,16 +106,16 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ── Vitals Row ───────────────────
-                _buildVitalsRow(profile),
+                _buildVitalsRow(profile, l10n),
                 const SizedBox(height: 20),
 
                 // ── Emergency Contact ────────────
-                _buildEmergencyCard(profile),
+                _buildEmergencyCard(profile, l10n),
                 const SizedBox(height: 20),
 
                 // ── Allergies ────────────────────
                 _buildTagSection(
-                  title: 'Allergies',
+                  title: l10n.medProfileAllergies,
                   icon: Icons.warning_amber_rounded,
                   iconColor: AppColors.danger,
                   iconBg: AppColors.dangerLight,
@@ -121,15 +123,16 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                   chipColor: AppColors.danger,
                   chipBg: AppColors.dangerLight,
                   controller: _allergyCtrl,
-                  hint: 'e.g. Penicillin',
+                  hint: l10n.medProfileAllergyHint,
                   onAdd: () => _add(_allergies, _allergyCtrl),
                   onRemove: (i) => _remove(_allergies, i),
+                  l10n: l10n,
                 ),
                 const SizedBox(height: 16),
 
                 // ── Chronic Conditions ───────────
                 _buildTagSection(
-                  title: 'Chronic Conditions',
+                  title: l10n.medProfileChronicConditions,
                   icon: Icons.monitor_heart_outlined,
                   iconColor: AppColors.warning,
                   iconBg: AppColors.warningLight,
@@ -137,14 +140,15 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                   chipColor: AppColors.warning,
                   chipBg: AppColors.warningLight,
                   controller: _conditionCtrl,
-                  hint: 'e.g. Type 2 Diabetes',
+                  hint: l10n.medProfileConditionHint,
                   onAdd: () => _add(_conditions, _conditionCtrl),
                   onRemove: (i) => _remove(_conditions, i),
+                  l10n: l10n,
                 ),
                 const SizedBox(height: 20),
 
                 // ── Medical History ──────────────
-                _buildHistorySection(profile),
+                _buildHistorySection(profile, l10n),
               ]),
             ),
           ),
@@ -153,11 +157,11 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     );
   }
 
-  Widget _buildVitalsRow(MedicalProfileProvider profile) {
+  Widget _buildVitalsRow(MedicalProfileProvider profile, AppLocalizations l10n) {
     final vitals = [
       (
         'bloodType',
-        'Blood Type',
+        l10n.medProfileBloodType,
         profile.bloodType,
         AppColors.danger,
         AppColors.dangerLight,
@@ -165,7 +169,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       ),
       (
         'height',
-        'Height',
+        l10n.medProfileHeight,
         profile.height,
         AppColors.primary,
         AppColors.primaryLight,
@@ -173,7 +177,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       ),
       (
         'weight',
-        'Weight',
+        l10n.medProfileWeight,
         profile.weight,
         AppColors.secondary,
         AppColors.secondaryLight,
@@ -239,23 +243,24 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       return;
     }
 
+    final l10n = AppLocalizations.of(context)!;
     final ctrl = TextEditingController(text: currentValue);
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Edit $label'),
+        title: Text(l10n.medProfileEditVitalTitle(label)),
         content: TextField(
           controller: ctrl,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: field == 'height' ? "e.g. 5'10\"" : 'e.g. 75 kg',
+            hintText: field == 'height' ? l10n.medProfileHeightHint : l10n.medProfileWeightHint,
             border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -269,7 +274,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
               }
               Navigator.pop(dialogContext);
             },
-            child: const Text('Save'),
+            child: Text(l10n.medProfileSave),
           ),
         ],
       ),
@@ -303,7 +308,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     );
   }
 
-  Widget _buildEmergencyCard(MedicalProfileProvider profile) {
+  Widget _buildEmergencyCard(MedicalProfileProvider profile, AppLocalizations l10n) {
     final initial = profile.emergencyName.isNotEmpty
         ? profile.emergencyName[0].toUpperCase()
         : '?';
@@ -334,12 +339,12 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text('Emergency contact', style: AppTextStyles.headlineSmall),
+                Text(l10n.medProfileEmergencyContact, style: AppTextStyles.headlineSmall),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: () => _editEmergencyContact(profile),
                   icon: const Icon(Icons.edit_outlined, size: 14),
-                  label: const Text('Edit'),
+                  label: Text(l10n.medProfileEdit),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
                     padding: EdgeInsets.zero,
@@ -402,31 +407,32 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
   }
 
   void _editEmergencyContact(MedicalProfileProvider profile) {
+    final l10n = AppLocalizations.of(context)!;
     final nameCtrl = TextEditingController(text: profile.emergencyName);
     final phoneCtrl = TextEditingController(text: profile.emergencyPhone);
 
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit emergency contact'),
+        title: Text(l10n.medProfileEditEmergencyTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.medProfileNameLabel,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: phoneCtrl,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone number',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: l10n.medProfilePhoneLabel,
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -434,7 +440,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -447,7 +453,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
               );
               Navigator.pop(dialogContext);
             },
-            child: const Text('Save'),
+            child: Text(l10n.medProfileSave),
           ),
         ],
       ),
@@ -460,7 +466,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       await launchUrl(uri);
     } catch (e) {
       if (!mounted) return;
-      showAppSnackBar(context, 'Could not make call');
+      showAppSnackBar(context, AppLocalizations.of(context)!.medProfileCouldNotCall);
     }
   }
 
@@ -476,6 +482,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     required String hint,
     required VoidCallback onAdd,
     required void Function(int) onRemove,
+    required AppLocalizations l10n,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -518,7 +525,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        'None added yet',
+                        l10n.medProfileNoneAddedYet,
                         style: AppTextStyles.bodyMedium,
                       ),
                     ),
@@ -637,7 +644,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     );
   }
 
-  Widget _buildHistorySection(MedicalProfileProvider profile) {
+  Widget _buildHistorySection(MedicalProfileProvider profile, AppLocalizations l10n) {
     final history = profile.history;
 
     return Column(
@@ -645,13 +652,13 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       children: [
         Row(
           children: [
-            Text('Medical history', style: AppTextStyles.headlineSmall),
+            Text(l10n.medProfileMedicalHistory, style: AppTextStyles.headlineSmall),
             const Spacer(),
             IconButton(
               onPressed: () => _showHistoryDialog(),
               icon: const Icon(Icons.add_circle_outline, size: 20),
               color: AppColors.primary,
-              tooltip: 'Add record',
+              tooltip: l10n.medProfileAddRecordTooltip,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
@@ -659,7 +666,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
             TextButton(
               onPressed: () => _exportHistory(history),
               child: Text(
-                'Export all',
+                l10n.medProfileExportAll,
                 style: AppTextStyles.labelMedium.copyWith(
                   color: AppColors.primary,
                 ),
@@ -677,21 +684,21 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Text('No history yet', style: AppTextStyles.bodyMedium),
+              child: Text(l10n.medProfileNoHistoryYet, style: AppTextStyles.bodyMedium),
             ),
           )
         else
           ...history.asMap().entries.map(
-            (e) => _buildHistoryCard(e.value, e.key),
+            (e) => _buildHistoryCard(e.value, e.key, l10n),
           ),
       ],
     );
   }
 
-  Widget _buildHistoryCard(Map<String, dynamic> r, int index) {
+  Widget _buildHistoryCard(Map<String, dynamic> r, int index, AppLocalizations l10n) {
     final parts = r['date'].split('-');
     final day = parts[2];
-    final month = _monthName(parts[1]);
+    final month = _monthName(parts[1], l10n);
     final year = parts[0];
 
     return Container(
@@ -772,11 +779,11 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                                   .removeHistoryEntry(index);
                             }
                           },
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          itemBuilder: (context) => [
+                            PopupMenuItem(value: 'edit', child: Text(l10n.medProfileEdit)),
                             PopupMenuItem(
                               value: 'delete',
-                              child: Text('Delete'),
+                              child: Text(l10n.medProfileDelete),
                             ),
                           ],
                         ),
@@ -830,25 +837,26 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
     );
   }
 
-  String _monthName(String m) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+  String _monthName(String m, AppLocalizations l10n) {
+    final months = [
+      l10n.medProfileMonthJan,
+      l10n.medProfileMonthFeb,
+      l10n.medProfileMonthMar,
+      l10n.medProfileMonthApr,
+      l10n.medProfileMonthMay,
+      l10n.medProfileMonthJun,
+      l10n.medProfileMonthJul,
+      l10n.medProfileMonthAug,
+      l10n.medProfileMonthSep,
+      l10n.medProfileMonthOct,
+      l10n.medProfileMonthNov,
+      l10n.medProfileMonthDec,
     ];
     return months[int.parse(m) - 1];
   }
 
   void _showHistoryDialog({int? index, Map<String, dynamic>? existing}) {
+    final l10n = AppLocalizations.of(context)!;
     final doctorCtrl = TextEditingController(
       text: existing?['doctor'] as String? ?? '',
     );
@@ -868,7 +876,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) => AlertDialog(
-          title: Text(existing == null ? 'Add record' : 'Edit record'),
+          title: Text(existing == null ? l10n.medProfileAddRecordTitle : l10n.medProfileEditRecordTitle),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -887,9 +895,9 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                     }
                   },
                   child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Date',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l10n.medProfileDateLabel,
+                      border: const OutlineInputBorder(),
                     ),
                     child: Text(
                       '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}',
@@ -899,25 +907,25 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: doctorCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Doctor',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.medProfileDoctorLabel,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: diagnosisCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Diagnosis',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.medProfileDiagnosisLabel,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: medicinesCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Medicines (comma separated)',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: l10n.medProfileMedicinesLabel,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -926,7 +934,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -953,7 +961,7 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
                 }
                 Navigator.pop(dialogContext);
               },
-              child: const Text('Save'),
+              child: Text(l10n.medProfileSave),
             ),
           ],
         ),
@@ -962,40 +970,42 @@ class _MedicalProfileScreenState extends State<MedicalProfileScreen> {
   }
 
   void _exportProfile(MedicalProfileProvider profile) {
+    final l10n = AppLocalizations.of(context)!;
     final buffer = StringBuffer()
-      ..writeln('MedIntel — Medical Profile')
+      ..writeln(l10n.medProfileExportTitle)
       ..writeln()
-      ..writeln('Blood Type: ${profile.bloodType}')
-      ..writeln('Height: ${profile.height}')
-      ..writeln('Weight: ${profile.weight}')
+      ..writeln(l10n.medProfileExportBloodTypeLine(profile.bloodType))
+      ..writeln(l10n.medProfileExportHeightLine(profile.height))
+      ..writeln(l10n.medProfileExportWeightLine(profile.weight))
       ..writeln()
-      ..writeln('Allergies: ${_allergies.isEmpty ? 'None' : _allergies.join(', ')}')
+      ..writeln(l10n.medProfileExportAllergiesLine(_allergies.isEmpty ? l10n.medProfileExportNone : _allergies.join(', ')))
       ..writeln(
-        'Chronic Conditions: ${_conditions.isEmpty ? 'None' : _conditions.join(', ')}',
+        l10n.medProfileExportConditionsLine(_conditions.isEmpty ? l10n.medProfileExportNone : _conditions.join(', ')),
       )
       ..writeln()
-      ..writeln('Emergency Contact: ${profile.emergencyName} (${profile.emergencyPhone})')
+      ..writeln(l10n.medProfileExportEmergencyLine(profile.emergencyName, profile.emergencyPhone))
       ..writeln()
-      ..writeln('Medical History:');
+      ..writeln(l10n.medProfileExportHistoryHeading);
     for (final r in profile.history) {
       buffer.writeln(
-        '- ${r['date']}: ${r['diagnosis']} (${r['doctor']}) — ${(r['medicines'] as List).join(', ')}',
+        l10n.medProfileExportHistoryLine(r['date'], r['diagnosis'], r['doctor'], (r['medicines'] as List).join(', ')),
       );
     }
-    buffer.writeln('\nShared via MedIntel');
+    buffer.writeln('\n${l10n.medDetailShareFooter}');
 
-    Share.share(buffer.toString(), subject: 'Medical Profile');
+    Share.share(buffer.toString(), subject: l10n.medProfileShareSubject);
   }
 
   void _exportHistory(List<Map<String, dynamic>> history) {
-    final buffer = StringBuffer()..writeln('MedIntel — Medical History')..writeln();
+    final l10n = AppLocalizations.of(context)!;
+    final buffer = StringBuffer()..writeln(l10n.medProfileExportHistoryTitle)..writeln();
     for (final r in history) {
       buffer.writeln(
-        '- ${r['date']}: ${r['diagnosis']} (${r['doctor']}) — ${(r['medicines'] as List).join(', ')}',
+        l10n.medProfileExportHistoryLine(r['date'], r['diagnosis'], r['doctor'], (r['medicines'] as List).join(', ')),
       );
     }
-    buffer.writeln('\nShared via MedIntel');
+    buffer.writeln('\n${l10n.medDetailShareFooter}');
 
-    Share.share(buffer.toString(), subject: 'Medical History');
+    Share.share(buffer.toString(), subject: l10n.medProfileHistoryShareSubject);
   }
 }

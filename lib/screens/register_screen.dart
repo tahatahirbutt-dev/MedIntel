@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/services/auth_service.dart';
 import 'package:med_intel/screens/login_screen.dart';
+import 'package:med_intel/screens/main_navigation.dart';
 import 'package:med_intel/theme/app_theme.dart';
+import 'package:med_intel/widgets/google_sign_in_button.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -19,6 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _authService = AuthService();
 
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _agreedToTerms = false;
@@ -53,10 +57,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Future<void> _register() async {
+    final l10n = AppLocalizations.of(context)!;
     if (!_formKey.currentState!.validate()) return;
     if (!_agreedToTerms) {
       _showSnack(
-        'Please accept the Terms & Conditions to continue.',
+        l10n.registerAcceptTerms,
         isError: true,
       );
       return;
@@ -69,7 +74,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         _nameCtrl.text.trim(),
       );
       if (!mounted) return;
-      _showSnack('Account created! Please sign in.');
+      _showSnack(l10n.registerAccountCreated);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -79,6 +84,23 @@ class _RegisterScreenState extends State<RegisterScreen>
       _showSnack(e.toString(), isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _registerWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      final user = await _authService.signInWithGoogle();
+      if (!mounted || user == null) return; // null = user cancelled the flow
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainNavigationScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(e.toString(), isError: true);
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -93,6 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: FadeTransition(
@@ -127,14 +150,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Text(
-                              'Create account',
+                              l10n.registerCreateAccount,
                               style: AppTextStyles.displaySmall.copyWith(
                                 color: Colors.white,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Join Med Intel for smarter healthcare',
+                              l10n.registerSubtitle,
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: Colors.white.withOpacity(0.8),
                               ),
@@ -157,34 +180,34 @@ class _RegisterScreenState extends State<RegisterScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppTextField(
-                          label: 'Full name',
-                          hint: 'Your full name',
+                          label: l10n.registerFullName,
+                          hint: l10n.registerFullNameHint,
                           controller: _nameCtrl,
                           prefixIcon: Icons.person_outline,
                           validator: (v) => (v == null || v.trim().isEmpty)
-                              ? 'Name is required'
+                              ? l10n.registerNameRequired
                               : null,
                         ),
                         const SizedBox(height: 16),
                         AppTextField(
-                          label: 'Email address',
+                          label: l10n.registerEmailLabel,
                           hint: 'you@example.com',
                           controller: _emailCtrl,
                           prefixIcon: Icons.email_outlined,
                           keyboardType: TextInputType.emailAddress,
                           validator: (v) {
                             if (v == null || v.trim().isEmpty)
-                              return 'Email is required';
+                              return l10n.registerEmailRequired;
                             if (!RegExp(
                               r'^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$',
                             ).hasMatch(v.trim()))
-                              return 'Enter a valid email';
+                              return l10n.registerEmailInvalid;
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         AppTextField(
-                          label: 'Password',
+                          label: l10n.commonPassword,
                           controller: _passCtrl,
                           prefixIcon: Icons.lock_outline,
                           obscureText: _obscurePass,
@@ -194,14 +217,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty)
-                              return 'Password is required';
-                            if (v.length < 6) return 'Minimum 6 characters';
+                              return l10n.registerPasswordRequired;
+                            if (v.length < 6) return l10n.registerPasswordMinLength;
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
                         AppTextField(
-                          label: 'Confirm password',
+                          label: l10n.registerConfirmPassword,
                           controller: _confirmCtrl,
                           prefixIcon: Icons.lock_outline,
                           obscureText: _obscureConfirm,
@@ -213,9 +236,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty)
-                              return 'Please confirm your password';
+                              return l10n.registerConfirmPasswordRequired;
                             if (v != _passCtrl.text)
-                              return 'Passwords do not match';
+                              return l10n.registerPasswordMismatch;
                             return null;
                           },
                         ),
@@ -248,9 +271,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   color: AppColors.textSecondary,
                                 ),
                                 children: [
-                                  const TextSpan(text: 'I agree to the '),
+                                  TextSpan(text: l10n.registerAgreeToThe),
                                   TextSpan(
-                                    text: 'Terms & Conditions',
+                                    text: l10n.registerTermsConditions,
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
@@ -258,9 +281,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       decorationColor: AppColors.primary,
                                     ),
                                   ),
-                                  const TextSpan(text: ' and '),
+                                  TextSpan(text: l10n.registerAnd),
                                   TextSpan(
-                                    text: 'Privacy Policy',
+                                    text: l10n.registerPrivacyPolicy,
                                     style: TextStyle(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
@@ -276,9 +299,32 @@ class _RegisterScreenState extends State<RegisterScreen>
                         const SizedBox(height: 28),
 
                         AppPrimaryButton(
-                          label: 'Create account',
+                          label: l10n.registerCreateAccount,
                           onPressed: _isLoading ? null : _register,
                           isLoading: _isLoading,
+                        ),
+                        const SizedBox(height: 24),
+
+                        Row(
+                          children: [
+                            const Expanded(child: Divider()),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Text(l10n.commonOr, style: AppTextStyles.bodySmall),
+                            ),
+                            const Expanded(child: Divider()),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        GoogleSignInButton(
+                          label: l10n.loginContinueWithGoogle,
+                          isLoading: _isGoogleLoading,
+                          onPressed: (_isLoading || _isGoogleLoading)
+                              ? null
+                              : _registerWithGoogle,
                         ),
                         const SizedBox(height: 24),
 
@@ -287,14 +333,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                             text: TextSpan(
                               style: AppTextStyles.bodyMedium,
                               children: [
-                                const TextSpan(
-                                  text: 'Already have an account? ',
+                                TextSpan(
+                                  text: l10n.registerAlreadyHaveAccount,
                                 ),
                                 WidgetSpan(
                                   child: GestureDetector(
                                     onTap: () => Navigator.pop(context),
                                     child: Text(
-                                      'Sign in',
+                                      l10n.loginSignIn,
                                       style: AppTextStyles.labelLarge.copyWith(
                                         color: AppColors.primary,
                                         decoration: TextDecoration.underline,

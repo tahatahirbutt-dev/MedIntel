@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/models/prescription_model.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/providers/cart_provider.dart';
@@ -47,6 +48,7 @@ class _ResultsScreenState extends State<ResultsScreen>
   @override
   Widget build(BuildContext context) {
     final medicines = widget.prescription.medicines;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -69,7 +71,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                   color: Colors.white,
                 ),
                 onPressed: _goToPharmacy,
-                tooltip: 'Find pharmacies',
+                tooltip: l10n.resultFindPharmaciesTooltip,
               ),
               const SizedBox(width: 4),
             ],
@@ -89,9 +91,9 @@ class _ResultsScreenState extends State<ResultsScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Text(
-                          'Analysis Results',
-                          style: TextStyle(
+                        Text(
+                          l10n.resultTitle,
+                          style: const TextStyle(
                             fontFamily: 'Outfit',
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -100,7 +102,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${medicines.length} medicine${medicines.length == 1 ? '' : 's'} detected',
+                          l10n.resultMedicinesDetected(medicines.length),
                           style: TextStyle(
                             fontFamily: 'DM Sans',
                             fontSize: 13,
@@ -120,23 +122,23 @@ class _ResultsScreenState extends State<ResultsScreen>
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // ── Prescription Image ───────────
-                if (widget.imagePath.isNotEmpty) _buildPrescriptionCard(),
+                if (widget.imagePath.isNotEmpty) _buildPrescriptionCard(l10n),
 
                 const SizedBox(height: 16),
 
                 // ── Interaction Warning Banner ───
-                _buildInteractionBanner(medicines),
+                _buildInteractionBanner(medicines, l10n),
 
                 const SizedBox(height: 16),
 
                 // ── Summary Stats Row ────────────
-                _buildSummaryStats(medicines),
+                _buildSummaryStats(medicines, l10n),
 
                 const SizedBox(height: 20),
 
                 SectionHeader(
-                  title: 'Detected medicines',
-                  actionLabel: 'Check interactions',
+                  title: l10n.resultDetectedMedicines,
+                  actionLabel: l10n.resultCheckInteractionsAction,
                   onAction: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -150,13 +152,13 @@ class _ResultsScreenState extends State<ResultsScreen>
 
                 // ── Medicine Cards ───────────────
                 ...medicines.asMap().entries.map(
-                  (e) => _buildMedicineCard(medicine: e.value, index: e.key),
+                  (e) => _buildMedicineCard(medicine: e.value, index: e.key, l10n: l10n),
                 ),
 
                 const SizedBox(height: 24),
 
                 // ── Bottom Action Buttons ────────
-                _buildBottomActions(),
+                _buildBottomActions(l10n),
               ]),
             ),
           ),
@@ -165,7 +167,7 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
-  Widget _buildPrescriptionCard() {
+  Widget _buildPrescriptionCard(AppLocalizations l10n) {
     return Container(
       height: 160,
       decoration: BoxDecoration(
@@ -206,14 +208,14 @@ class _ResultsScreenState extends State<ResultsScreen>
                   color: Colors.black.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.document_scanner, color: Colors.white, size: 14),
-                    SizedBox(width: 6),
+                    const Icon(Icons.document_scanner, color: Colors.white, size: 14),
+                    const SizedBox(width: 6),
                     Text(
-                      'Uploaded prescription',
-                      style: TextStyle(
+                      l10n.resultUploadedPrescription,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontFamily: 'DM Sans',
                         fontSize: 12,
@@ -230,7 +232,7 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
-  Widget _buildInteractionBanner(List<Medicine> medicines) {
+  Widget _buildInteractionBanner(List<Medicine> medicines, AppLocalizations l10n) {
     final hasPotentialInteraction = medicines.length > 1;
     if (!hasPotentialInteraction) return const SizedBox.shrink();
 
@@ -270,13 +272,13 @@ class _ResultsScreenState extends State<ResultsScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Check drug interactions',
+                    l10n.resultCheckInteractions,
                     style: AppTextStyles.titleMedium.copyWith(
                       color: Color(0xFF92400E),
                     ),
                   ),
                   Text(
-                    '${medicines.length} medicines detected — tap to run safety check',
+                    l10n.resultInteractionBannerBody(medicines.length),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Color(0xFFB45309),
                     ),
@@ -291,12 +293,12 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
-  Widget _buildSummaryStats(List<Medicine> medicines) {
+  Widget _buildSummaryStats(List<Medicine> medicines, AppLocalizations l10n) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
-            label: 'Medicines',
+            label: l10n.resultStatMedicines,
             value: '${medicines.length}',
             icon: Icons.medication_outlined,
             color: AppColors.primary,
@@ -305,7 +307,7 @@ class _ResultsScreenState extends State<ResultsScreen>
         const SizedBox(width: 10),
         Expanded(
           child: _buildStatCard(
-            label: 'Alternatives',
+            label: l10n.resultStatAlternatives,
             value:
                 '${medicines.fold(0, (sum, m) => sum + m.alternatives.length)}',
             icon: Icons.swap_horiz,
@@ -315,8 +317,8 @@ class _ResultsScreenState extends State<ResultsScreen>
         const SizedBox(width: 10),
         Expanded(
           child: _buildStatCard(
-            label: 'Scanned',
-            value: 'Today',
+            label: l10n.resultStatScanned,
+            value: l10n.resultToday,
             icon: Icons.calendar_today_outlined,
             color: AppColors.warning,
           ),
@@ -353,7 +355,7 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
-  Widget _buildMedicineCard({required Medicine medicine, required int index}) {
+  Widget _buildMedicineCard({required Medicine medicine, required int index, required AppLocalizations l10n}) {
     final isExpanded = _expandedIndex == index;
     final accentColor = medicineColor(medicine.name);
     final bgColor = medicineBgColor(medicine.name);
@@ -476,7 +478,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                         Expanded(
                           child: _buildDetailChip(
                             Icons.repeat_rounded,
-                            'Frequency',
+                            l10n.resultFrequency,
                             medicine.frequency,
                           ),
                         ),
@@ -484,7 +486,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                         Expanded(
                           child: _buildDetailChip(
                             Icons.hourglass_bottom,
-                            'Duration',
+                            l10n.resultDuration,
                             medicine.duration,
                           ),
                         ),
@@ -494,7 +496,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                     if (medicine.alternatives.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       Text(
-                        'Safe alternatives',
+                        l10n.resultSafeAlternatives,
                         style: AppTextStyles.labelLarge.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -537,7 +539,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                           child: OutlinedButton.icon(
                             onPressed: () => _openDetails(medicine),
                             icon: const Icon(Icons.info_outline, size: 16),
-                            label: const Text('Details'),
+                            label: Text(l10n.commonDetails),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               side: BorderSide(
@@ -556,7 +558,7 @@ class _ResultsScreenState extends State<ResultsScreen>
                           child: ElevatedButton.icon(
                             onPressed: () => _addToCart(medicine),
                             icon: const Icon(Icons.add_shopping_cart, size: 16),
-                            label: const Text('Add to cart'),
+                            label: Text(l10n.commonAddToCart),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: accentColor,
                               foregroundColor: Colors.white,
@@ -582,6 +584,7 @@ class _ResultsScreenState extends State<ResultsScreen>
   }
 
   Future<void> _openDetails(Medicine medicine) async {
+    final l10n = AppLocalizations.of(context)!;
     final matches = await MedicineCatalogService.instance.searchMedicines(
       medicine.name,
       limit: 1,
@@ -591,7 +594,7 @@ class _ResultsScreenState extends State<ResultsScreen>
     if (matches.isEmpty) {
       showAppSnackBar(
         context,
-        "Couldn't find ${medicine.name} in the catalogue",
+        l10n.resultNotFoundInCatalogue(medicine.name),
       );
       return;
     }
@@ -607,6 +610,7 @@ class _ResultsScreenState extends State<ResultsScreen>
   }
 
   Future<void> _addToCart(Medicine medicine) async {
+    final l10n = AppLocalizations.of(context)!;
     final matches = await MedicineCatalogService.instance.searchMedicines(
       medicine.name,
       limit: 1,
@@ -616,7 +620,7 @@ class _ResultsScreenState extends State<ResultsScreen>
     if (matches.isEmpty) {
       showAppSnackBar(
         context,
-        "Couldn't find ${medicine.name} in the catalogue",
+        l10n.resultNotFoundInCatalogue(medicine.name),
       );
       return;
     }
@@ -630,8 +634,8 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
     showAppSnackBar(
       context,
-      '${medicine.name} added to cart',
-      actionLabel: 'View Cart',
+      l10n.commonAddedToCart(medicine.name),
+      actionLabel: l10n.commonViewCart,
       onAction: () => Navigator.pushNamed(context, AppNavigation.cart),
     );
   }
@@ -660,14 +664,14 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
-  Widget _buildBottomActions() {
+  Widget _buildBottomActions(AppLocalizations l10n) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.upload_outlined, size: 18),
-            label: const Text('Upload another'),
+            label: Text(l10n.resultUploadAnother),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -679,7 +683,7 @@ class _ResultsScreenState extends State<ResultsScreen>
         const SizedBox(width: 12),
         Expanded(
           child: AppPrimaryButton(
-            label: 'Pharmacies',
+            label: l10n.resultPharmaciesButton,
             icon: Icons.local_pharmacy_outlined,
             onPressed: _goToPharmacy,
           ),

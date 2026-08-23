@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/providers/cart_provider.dart';
+import 'package:med_intel/providers/locale_provider.dart';
 import 'package:med_intel/providers/medical_profile_provider.dart';
 import 'package:med_intel/providers/orders_provider.dart';
 import 'package:med_intel/providers/saved_medicines_provider.dart';
@@ -45,6 +47,8 @@ void main() {
       await medicalProfileProvider.loadFromPrefs();
       final ordersProvider = OrdersProvider();
       await ordersProvider.loadFromPrefs();
+      final localeProvider = LocaleProvider();
+      await localeProvider.loadFromPrefs();
 
       runApp(
         MedIntelApp(
@@ -52,6 +56,7 @@ void main() {
           savedMedicinesProvider: savedMedicinesProvider,
           medicalProfileProvider: medicalProfileProvider,
           ordersProvider: ordersProvider,
+          localeProvider: localeProvider,
         ),
       );
     },
@@ -66,6 +71,7 @@ class MedIntelApp extends StatelessWidget {
   final SavedMedicinesProvider savedMedicinesProvider;
   final MedicalProfileProvider medicalProfileProvider;
   final OrdersProvider ordersProvider;
+  final LocaleProvider localeProvider;
 
   const MedIntelApp({
     super.key,
@@ -73,6 +79,7 @@ class MedIntelApp extends StatelessWidget {
     required this.savedMedicinesProvider,
     required this.medicalProfileProvider,
     required this.ordersProvider,
+    required this.localeProvider,
   });
 
   @override
@@ -83,13 +90,21 @@ class MedIntelApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: savedMedicinesProvider),
         ChangeNotifierProvider.value(value: medicalProfileProvider),
         ChangeNotifierProvider.value(value: ordersProvider),
+        ChangeNotifierProvider.value(value: localeProvider),
       ],
-      child: MaterialApp(
-        title: 'Med Intel',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        home: const AuthWrapper(),
-        onGenerateRoute: AppNavigation.generateRoute,
+      child: Consumer<LocaleProvider>(
+        builder: (context, locale, _) {
+          return MaterialApp(
+            title: 'Med Intel',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            locale: locale.locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const AuthWrapper(),
+            onGenerateRoute: AppNavigation.generateRoute,
+          );
+        },
       ),
     );
   }

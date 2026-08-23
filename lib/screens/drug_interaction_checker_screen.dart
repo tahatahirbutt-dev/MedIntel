@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/services/mock_data.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/utils/snackbar_utils.dart';
@@ -45,8 +46,9 @@ class _DrugInteractionCheckerScreenState
   }
 
   Future<void> _checkInteractions() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_selectedMedicines.isEmpty) {
-      _showErrorSnackBar('Please add at least one medicine');
+      _showErrorSnackBar(l10n.dicAddAtLeastOne);
       return;
     }
 
@@ -72,22 +74,23 @@ class _DrugInteractionCheckerScreenState
 
       _showResultDialog();
     } catch (e) {
-      _showErrorSnackBar('Error checking interactions: $e');
+      _showErrorSnackBar(l10n.dicErrorChecking(e.toString()));
     } finally {
       setState(() => _isChecking = false);
     }
   }
 
   void _addMedicine() {
+    final l10n = AppLocalizations.of(context)!;
     final medicine = _medicineController.text.trim();
 
     if (medicine.isEmpty) {
-      _showErrorSnackBar('Please enter a medicine name');
+      _showErrorSnackBar(l10n.dicEnterMedicineName);
       return;
     }
 
     if (_selectedMedicines.contains(medicine)) {
-      _showErrorSnackBar('Medicine already added');
+      _showErrorSnackBar(l10n.dicAlreadyAdded);
       return;
     }
 
@@ -108,6 +111,7 @@ class _DrugInteractionCheckerScreenState
   }
 
   void _showResultDialog() {
+    final l10n = AppLocalizations.of(context)!;
     final hasInteractions = _interactions?.isNotEmpty ?? false;
     final hasAllergyConflicts = _allergyConflicts?.isNotEmpty ?? false;
     final isSafe = !hasInteractions && !hasAllergyConflicts;
@@ -123,7 +127,7 @@ class _DrugInteractionCheckerScreenState
               size: 28,
             ),
             const SizedBox(width: 8),
-            Text(isSafe ? 'Safe to Use' : 'Caution Required'),
+            Text(isSafe ? l10n.dicSafeToUse : l10n.dicCautionRequired),
           ],
         ),
         content: SingleChildScrollView(
@@ -133,7 +137,7 @@ class _DrugInteractionCheckerScreenState
             children: [
               if (isSafe) ...[
                 Text(
-                  'No significant interactions detected.',
+                  l10n.dicNoInteractions,
                   style: AppTextStyles.labelLarge.copyWith(
                     color: AppColors.success,
                   ),
@@ -141,7 +145,7 @@ class _DrugInteractionCheckerScreenState
               ] else ...[
                 if (hasInteractions) ...[
                   Text(
-                    'Drug Interactions Found:',
+                    l10n.dicInteractionsFoundHeading,
                     style: AppTextStyles.labelLarge,
                   ),
                   const SizedBox(height: 8),
@@ -155,7 +159,7 @@ class _DrugInteractionCheckerScreenState
                 ],
                 if (hasAllergyConflicts) ...[
                   Text(
-                    'Allergy Warnings:',
+                    l10n.dicAllergyWarningsHeading,
                     style: AppTextStyles.labelLarge.copyWith(
                       color: AppColors.danger,
                     ),
@@ -164,7 +168,7 @@ class _DrugInteractionCheckerScreenState
                   ..._allergyConflicts!.map((conflict) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: _buildAllergyConflictItem(conflict),
+                      child: _buildAllergyConflictItem(conflict, l10n),
                     );
                   }),
                 ],
@@ -178,7 +182,7 @@ class _DrugInteractionCheckerScreenState
                   border: Border.all(color: AppColors.info.withOpacity(0.3)),
                 ),
                 child: Text(
-                  '⚠️ This checker is informational only. Always consult a doctor or pharmacist before taking medicines.',
+                  l10n.dicDisclaimer,
                   style: AppTextStyles.bodySmall,
                 ),
               ),
@@ -188,15 +192,15 @@ class _DrugInteractionCheckerScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(l10n.commonClose),
           ),
           if (!isSafe)
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                showAppSnackBar(this.context, 'Coming soon');
+                showAppSnackBar(this.context, l10n.commonComingSoon);
               },
-              child: const Text('Consult Pharmacist'),
+              child: Text(l10n.dicConsultPharmacist),
             ),
         ],
       ),
@@ -252,7 +256,7 @@ class _DrugInteractionCheckerScreenState
     );
   }
 
-  Widget _buildAllergyConflictItem(Map<String, dynamic> conflict) {
+  Widget _buildAllergyConflictItem(Map<String, dynamic> conflict, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -280,7 +284,7 @@ class _DrugInteractionCheckerScreenState
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  'ALERT',
+                  l10n.dicAlertBadge,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -291,7 +295,7 @@ class _DrugInteractionCheckerScreenState
           ),
           const SizedBox(height: 6),
           Text(
-            'Conflicting medicine: ${conflict['medicine']}',
+            l10n.dicConflictingMedicine(conflict['medicine'].toString()),
             style: AppTextStyles.bodySmall.copyWith(
               color: AppColors.danger,
               fontWeight: FontWeight.w500,
@@ -301,7 +305,7 @@ class _DrugInteractionCheckerScreenState
               (conflict['alternatives'] as List).isNotEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              'Safe alternatives: ${(conflict['alternatives'] as List).join(", ")}',
+              l10n.dicSafeAlternativesList((conflict['alternatives'] as List).join(", ")),
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
             ),
           ],
@@ -335,9 +339,10 @@ class _DrugInteractionCheckerScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Drug Interaction Checker'),
+        title: Text(l10n.dicTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -365,7 +370,7 @@ class _DrugInteractionCheckerScreenState
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'This tool checks for potential drug interactions. Always consult a healthcare professional.',
+                      l10n.dicInfoBanner,
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -378,7 +383,7 @@ class _DrugInteractionCheckerScreenState
             const SizedBox(height: 24),
 
             // Input Section
-            Text('Add Medicines', style: AppTextStyles.headlineMedium),
+            Text(l10n.dicAddMedicines, style: AppTextStyles.headlineMedium),
             const SizedBox(height: 12),
 
             Row(
@@ -387,7 +392,7 @@ class _DrugInteractionCheckerScreenState
                   child: TextField(
                     controller: _medicineController,
                     decoration: InputDecoration(
-                      hintText: 'Enter medicine name',
+                      hintText: l10n.dicEnterMedicineHint,
                       prefixIcon: const Icon(Icons.medication),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -413,7 +418,7 @@ class _DrugInteractionCheckerScreenState
             // Selected Medicines
             if (_selectedMedicines.isNotEmpty) ...[
               Text(
-                'Selected Medicines (${_selectedMedicines.length})',
+                l10n.dicSelectedMedicinesCount(_selectedMedicines.length),
                 style: AppTextStyles.headlineSmall,
               ),
               const SizedBox(height: 12),
@@ -434,7 +439,7 @@ class _DrugInteractionCheckerScreenState
             ],
 
             // User Allergies Section
-            Text('Your Allergies (Optional)', style: AppTextStyles.headlineSmall),
+            Text(l10n.dicYourAllergies, style: AppTextStyles.headlineSmall),
             const SizedBox(height: 12),
             if (_userAllergies.isEmpty)
               Container(
@@ -453,7 +458,7 @@ class _DrugInteractionCheckerScreenState
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Add allergies to your profile for better safety checks',
+                        l10n.dicAddAllergiesHint,
                         style: AppTextStyles.bodyMedium,
                       ),
                     ),
@@ -477,7 +482,7 @@ class _DrugInteractionCheckerScreenState
 
             // Check Button
             AppPrimaryButton(
-              label: _isChecking ? 'Checking...' : 'Check Interactions',
+              label: _isChecking ? l10n.dicChecking : l10n.dicCheckInteractions,
               icon: Icons.security_outlined,
               isLoading: _isChecking,
               color: AppColors.success,
@@ -490,7 +495,7 @@ class _DrugInteractionCheckerScreenState
             if (_interactions != null || _allergyConflicts != null) ...[
               const Divider(),
               const SizedBox(height: 16),
-              _buildResultsSummary(),
+              _buildResultsSummary(l10n),
             ],
 
             const SizedBox(height: 30),
@@ -500,7 +505,7 @@ class _DrugInteractionCheckerScreenState
     );
   }
 
-  Widget _buildResultsSummary() {
+  Widget _buildResultsSummary(AppLocalizations l10n) {
     final hasInteractions = _interactions?.isNotEmpty ?? false;
     final hasAllergyConflicts = _allergyConflicts?.isNotEmpty ?? false;
     final isSafe = !hasInteractions && !hasAllergyConflicts;
@@ -521,7 +526,7 @@ class _DrugInteractionCheckerScreenState
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  isSafe ? 'Safe Combination' : 'Interactions Detected',
+                  isSafe ? l10n.dicSafeCombination : l10n.dicInteractionsDetected,
                   style: AppTextStyles.headlineMedium.copyWith(
                     color: isSafe ? AppColors.success : AppColors.danger,
                   ),
@@ -531,17 +536,17 @@ class _DrugInteractionCheckerScreenState
             const SizedBox(height: 12),
             if (hasInteractions)
               Text(
-                '${_interactions!.length} interaction(s) found',
+                l10n.dicInteractionsFoundCount(_interactions!.length),
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.danger),
               ),
             if (hasAllergyConflicts)
               Text(
-                '${_allergyConflicts!.length} allergy conflict(s) found',
+                l10n.dicAllergyConflictsFoundCount(_allergyConflicts!.length),
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.danger),
               ),
             if (isSafe)
               Text(
-                'No significant interactions detected',
+                l10n.dicNoInteractions,
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.success),
               ),
           ],
@@ -551,21 +556,16 @@ class _DrugInteractionCheckerScreenState
   }
 
   void _showInfoDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About This Checker'),
-        content: const Text(
-          'This tool checks for:\n\n'
-          '• Drug-drug interactions\n'
-          '• Allergy conflicts\n'
-          '• Severity levels (Minor, Moderate, Severe)\n\n'
-          'This is for informational purposes only. Always consult with a healthcare professional.',
-        ),
+        title: Text(l10n.dicAboutTitle),
+        content: Text(l10n.dicAboutBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Understood'),
+            child: Text(l10n.dicUnderstood),
           ),
         ],
       ),

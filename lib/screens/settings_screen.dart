@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
+import 'package:med_intel/providers/locale_provider.dart';
 import 'package:med_intel/theme/app_theme.dart';
 import 'package:med_intel/utils/snackbar_utils.dart';
 
@@ -48,23 +51,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l10n.settingsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         children: [
-          _buildSectionTitle('Preferences'),
+          _buildSectionTitle(l10n.settingsPreferences),
           const SizedBox(height: 10),
           SwitchListTile(
             value: _notificationsEnabled,
             activeThumbColor: AppColors.primary,
-            title: const Text('Enable notifications'),
-            subtitle: const Text('Receive order and medication alerts'),
+            title: Text(l10n.settingsEnableNotifications),
+            subtitle: Text(l10n.settingsEnableNotificationsSubtitle),
             onChanged: (value) {
               setState(() => _notificationsEnabled = value);
               _savePrefs();
@@ -76,8 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             value: _reminderEnabled,
             activeThumbColor: AppColors.secondary,
-            title: const Text('Daily reminder'),
-            subtitle: const Text('Get a morning medication checklist'),
+            title: Text(l10n.settingsDailyReminder),
+            subtitle: Text(l10n.settingsDailyReminderSubtitle),
             onChanged: (value) {
               setState(() => _reminderEnabled = value);
               _savePrefs();
@@ -86,20 +90,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           const SizedBox(height: 20),
-          _buildSectionTitle('Regional'),
+          _buildSectionTitle(l10n.settingsRegional),
           const SizedBox(height: 10),
           _buildDropdownTile(
-            label: 'Language',
+            label: l10n.settingsLanguage,
             value: _language,
             options: const ['English', 'اردو'],
             onChanged: (value) {
               setState(() => _language = value);
               _savePrefs();
+              context.read<LocaleProvider>().setLanguage(value);
             },
           ),
           const SizedBox(height: 10),
           _buildDropdownTile(
-            label: 'Timezone',
+            label: l10n.settingsTimezone,
             value: _timezone,
             options: const ['GMT+5', 'GMT+4', 'UTC'],
             onChanged: (value) {
@@ -108,13 +113,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const SizedBox(height: 20),
-          _buildSectionTitle('Support'),
+          _buildSectionTitle(l10n.settingsSupport),
           const SizedBox(height: 10),
-          _buildOptionTile(Icons.privacy_tip_outlined, 'Privacy policy', 'Manage data sharing preferences'),
+          _buildOptionTile(Icons.privacy_tip_outlined, l10n.settingsPrivacyPolicy, l10n.settingsPrivacyPolicySubtitle),
           const SizedBox(height: 10),
-          _buildOptionTile(Icons.help_outline, 'Help & FAQ', 'Get support and answers'),
+          _buildOptionTile(Icons.help_outline, l10n.settingsHelpFaq, l10n.settingsHelpFaqSubtitle),
           const SizedBox(height: 20),
-          _buildInfoCard(),
+          _buildInfoCard(l10n),
         ],
       ),
     );
@@ -168,12 +173,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle, style: AppTextStyles.bodySmall),
         trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
-        onTap: () => showAppSnackBar(context, 'Coming soon'),
+        onTap: () => showAppSnackBar(context, AppLocalizations.of(context)!.commonComingSoon),
       ),
     );
   }
 
-  Widget _buildInfoCard() {
+  Widget _buildInfoCard(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
@@ -185,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Text('Med Intel', style: AppTextStyles.titleMedium.copyWith(color: AppColors.primary)),
           const SizedBox(height: 10),
-          Text('Version 1.0.0 • Secure by design', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary)),
+          Text(l10n.settingsVersionInfo, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary)),
         ],
       ),
     );

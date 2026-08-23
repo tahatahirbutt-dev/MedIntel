@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/providers/medical_profile_provider.dart';
 import 'package:med_intel/providers/orders_provider.dart';
@@ -45,10 +46,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveChanges() async {
+    final l10n = AppLocalizations.of(context)!;
     final name = _nameCtrl.text.trim();
     final phone = _phoneCtrl.text.trim();
     if (name.isEmpty) {
-      showAppSnackBar(context, 'Full name cannot be empty');
+      showAppSnackBar(context, l10n.profileNameEmpty);
       return;
     }
 
@@ -63,11 +65,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await prefs.setString(_phoneKey, phone);
       if (!mounted) return;
       setState(() => _savingChanges = false);
-      showAppSnackBar(context, 'Profile updated');
+      showAppSnackBar(context, l10n.profileUpdated);
     } catch (e) {
       if (!mounted) return;
       setState(() => _savingChanges = false);
-      showAppSnackBar(context, 'Failed to save changes');
+      showAppSnackBar(context, l10n.profileSaveFailed);
     }
   }
 
@@ -80,27 +82,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _logout() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Sign out?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.profileSignOutTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text('You will be redirected to the login screen.'),
+        content: Text(l10n.profileSignOutBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-            child: const Text(
-              'Sign out',
-              style: TextStyle(color: Colors.white),
+            child: Text(
+              l10n.profileSignOut,
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ],
@@ -126,6 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6), // Light grey background
       body: CustomScrollView(
@@ -188,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _fbUser?.displayName ?? 'My Profile',
+                                _fbUser?.displayName ?? l10n.profileMyProfile,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   fontSize: 24,
@@ -198,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Manage your personal information',
+                                l10n.profileManageInfo,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.white.withOpacity(0.8),
@@ -221,11 +225,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildQuickActions(),
+                  _buildQuickActions(l10n),
                   const SizedBox(height: 16),
-                  _buildPersonalInfoForm(),
+                  _buildPersonalInfoForm(l10n),
                   const SizedBox(height: 24),
-                  _buildSignOutBtn(),
+                  _buildSignOutBtn(l10n),
                   const SizedBox(height: 40), // Bottom padding
                 ],
               ),
@@ -236,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(AppLocalizations l10n) {
     return Column(
       children: [
         Row(
@@ -244,7 +248,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _ActionCard(
                 icon: Icons.medical_services,
-                label: 'Medical\nProfile',
+                label: l10n.profileActionMedical,
                 color: Colors.blue,
                 onTap: () => Navigator.push(
                   context,
@@ -258,7 +262,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _ActionCard(
                 icon: Icons.receipt_long,
-                label: 'Order\nHistory',
+                label: l10n.profileActionOrders,
                 color: Colors.teal,
                 onTap: () => Navigator.push(
                   context,
@@ -270,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _ActionCard(
                 icon: Icons.settings,
-                label: 'Settings',
+                label: l10n.settingsTitle,
                 color: Colors.orange,
                 onTap: () => Navigator.push(
                   context,
@@ -286,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _ActionCard(
                 icon: Icons.shopping_cart_outlined,
-                label: 'My\nCart',
+                label: l10n.profileActionCart,
                 color: AppColors.primary,
                 onTap: () => Navigator.push(
                   context,
@@ -298,7 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: _ActionCard(
                 icon: Icons.bookmark_outline,
-                label: 'Saved\nMedicines',
+                label: l10n.profileActionSaved,
                 color: Colors.purple,
                 onTap: () => Navigator.push(
                   context,
@@ -316,7 +320,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPersonalInfoForm() {
+  Widget _buildPersonalInfoForm(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -327,20 +331,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Personal Information',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Text(
+            l10n.profilePersonalInfo,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          _buildTextField('Full Name', _nameCtrl),
+          _buildTextField(l10n.profileFullName, _nameCtrl),
           const SizedBox(height: 12),
           _buildTextField(
-            'Email',
+            l10n.commonEmail,
             TextEditingController(text: _fbUser?.email),
             enabled: false,
           ),
           const SizedBox(height: 12),
-          _buildTextField('Phone Number', _phoneCtrl),
+          _buildTextField(l10n.profilePhoneNumber, _phoneCtrl),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
@@ -362,9 +366,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text(
-                      'Save Changes',
-                      style: TextStyle(
+                  : Text(
+                      l10n.profileSaveChanges,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -418,7 +422,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSignOutBtn() {
+  Widget _buildSignOutBtn(AppLocalizations l10n) {
     return InkWell(
       onTap: _logout,
       borderRadius: BorderRadius.circular(16),
@@ -430,14 +434,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.danger.withOpacity(0.3)),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout, color: AppColors.danger),
-            SizedBox(width: 8),
+            const Icon(Icons.logout, color: AppColors.danger),
+            const SizedBox(width: 8),
             Text(
-              'Sign Out',
-              style: TextStyle(
+              l10n.profileSignOutButton,
+              style: const TextStyle(
                 color: AppColors.danger,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -493,7 +497,7 @@ class _ActionCardState extends State<_ActionCard> {
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              height: 124,
+              height: AppFonts.isUrdu ? 136 : 124,
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
@@ -514,7 +518,9 @@ class _ActionCardState extends State<_ActionCard> {
                   Text(
                     widget.label,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.25),
                   ),
                 ],
               ),

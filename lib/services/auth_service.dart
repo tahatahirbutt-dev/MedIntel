@@ -1,7 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
+  // Web OAuth client ID from google-services.json (client_type 3) — Firebase's
+  // GoogleAuthProvider needs the ID token audience to match this, and unlike
+  // the old google_sign_in API, v7 no longer auto-derives it on Android.
+  static const _googleServerClientId =
+      '756161487540-9bhfpfu1vb8f8qr85qj63r1kbsug8rcs.apps.googleusercontent.com';
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  bool _googleSignInInitialized = false;
 
   User? get currentUser => _auth.currentUser;
 
@@ -43,7 +53,41 @@ class AuthService {
     return _auth.currentUser;
   }
 
-  Future<void> signOut() async => await _auth.signOut();
+  Future<User?> signInWithGoogle() async {
+    try {
+      if (!_googleSignInInitialized) {
+        await _googleSignIn.initialize(serverClientId: _googleServerClientId);
+        _googleSignInInitialized = true;
+      }
+
+      final googleUser = await _googleSignIn.authenticate();
+      final idToken = googleUser.authentication.idToken;
+      if (idToken == null) {
+        throw 'Google sign-in failed. Please try again.';
+      }
+
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final result = await _auth.signInWithCredential(credential);
+      return result.user;
+    } on GoogleSignInException catch (e) {
+      debugPrint('GoogleSignInException: code=${e.code} description=${e.description} details=${e.details}');
+      if (e.code == GoogleSignInExceptionCode.canceled) return null;
+      throw 'Google sign-in failed. Please try again.';
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException during Google sign-in: code=${e.code} message=${e.message}');
+      throw _mapFirebaseError(e.code);
+    } catch (e, st) {
+      debugPrint('Unexpected error during Google sign-in: $e\n$st');
+      throw 'Google sign-in failed. Please try again.';
+    }
+  }
+
+  Future<void> signOut() async {
+    await Future.wait([
+      _auth.signOut(),
+      if (_googleSignInInitialized) _googleSignIn.signOut(),
+    ]);
+  }
 
   Future<void> resetPassword(String email) async {
     await _auth.sendPasswordResetEmail(email: email.trim());

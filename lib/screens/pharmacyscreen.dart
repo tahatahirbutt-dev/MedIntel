@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/models/pharmacy.dart';
 import 'package:med_intel/services/mock_data.dart';
 import 'package:med_intel/services/pharmacy_location_service.dart';
@@ -99,9 +100,10 @@ class _PharmacyScreenState extends State<PharmacyScreen>
         mode: LaunchMode.externalApplication,
       );
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Could not open maps')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.pharmacyCouldNotOpenMaps)));
     }
   }
 
@@ -146,31 +148,33 @@ class _PharmacyScreenState extends State<PharmacyScreen>
       });
     } on LocationServiceDisabledException {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isSearchingNearby = false;
-        _nearbyErrorMessage =
-            'Location services are turned off. Enable GPS to find nearby pharmacies.';
-        _nearbyErrorActionLabel = 'Open Settings';
+        _nearbyErrorMessage = l10n.pharmacyLocationServicesOff;
+        _nearbyErrorActionLabel = l10n.pharmacyOpenSettings;
         _nearbyErrorAction = () => Geolocator.openLocationSettings();
       });
     } on LocationPermissionDeniedException catch (e) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isSearchingNearby = false;
         _nearbyErrorMessage = e.forever
-            ? 'Location permission was permanently denied. Enable it from app settings.'
-            : 'Location permission is required to find nearby pharmacies.';
-        _nearbyErrorActionLabel = e.forever ? 'Open Settings' : 'Try Again';
+            ? l10n.pharmacyPermissionDeniedForever
+            : l10n.pharmacyPermissionRequired;
+        _nearbyErrorActionLabel = e.forever ? l10n.pharmacyOpenSettings : l10n.pharmacyTryAgain;
         _nearbyErrorAction = e.forever
             ? () => Geolocator.openAppSettings()
             : _findNearbyPharmacies;
       });
     } catch (_) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _isSearchingNearby = false;
-        _nearbyErrorMessage = 'Something went wrong. Please try again.';
-        _nearbyErrorActionLabel = 'Try Again';
+        _nearbyErrorMessage = l10n.pharmacyGenericError;
+        _nearbyErrorActionLabel = l10n.pharmacyTryAgain;
         _nearbyErrorAction = _findNearbyPharmacies;
       });
     }
@@ -181,9 +185,10 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     try {
       await launchUrl(launchUri);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Could not make call')));
+      ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.medProfileCouldNotCall)));
     }
   }
 
@@ -202,7 +207,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${pharmacy['name']} registered successfully!'),
+              content: Text(AppLocalizations.of(context)!.pharmacyRegisteredSuccess(pharmacy['name'].toString())),
               backgroundColor: AppColors.success,
               behavior: SnackBarBehavior.floating,
             ),
@@ -214,6 +219,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
@@ -237,7 +243,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                 child: SafeArea(
                   child: Padding(
                     padding: _headerPadding,
-                    child: _buildPharmacyHeader(),
+                    child: _buildPharmacyHeader(l10n),
                   ),
                 ),
               ),
@@ -253,28 +259,28 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   _buildSkeleton()
                 else ...[
                   // ── SECTION 0: Nearby Pharmacies (free GPS search) ──
-                  _buildSectionHeader('Nearby Pharmacies'),
+                  _buildSectionHeader(l10n.pharmacyNearbyHeader),
                   const SizedBox(height: 12),
-                  _buildNearbySection(),
+                  _buildNearbySection(l10n),
                   const SizedBox(height: 28),
 
                   // ── SECTION 1: Reference Pharmacy (Template) ──
-                  _buildSectionHeader('Reference Template'),
+                  _buildSectionHeader(l10n.pharmacyReferenceHeader),
                   const SizedBox(height: 12),
-                  _buildPharmacyCard(_referencePharmacy, isReference: true),
+                  _buildPharmacyCard(_referencePharmacy, l10n, isReference: true),
                   const SizedBox(height: 28),
 
                   // ── SECTION 2: Register New Pharmacy ──
-                  _buildSectionHeader('Register Your Pharmacy'),
+                  _buildSectionHeader(l10n.pharmacyRegisterHeader),
                   const SizedBox(height: 12),
-                  _buildRegisterButton(),
+                  _buildRegisterButton(l10n),
                   const SizedBox(height: 16),
                   const SizedBox(height: 28),
 
                   // ── SECTION 3: Registered Pharmacies ──
                   if (_registeredPharmacies.isNotEmpty) ...[
                     _buildSectionHeader(
-                      'Registered Pharmacies (${_registeredPharmacies.length})',
+                      l10n.pharmacyRegisteredHeader(_registeredPharmacies.length),
                     ),
                     const SizedBox(height: 12),
                     ..._registeredPharmacies.asMap().entries.map((entry) {
@@ -284,13 +290,14 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _buildPharmacyCard(
                           pharmacy,
+                          l10n,
                           onDelete: () {
                             setState(
                               () => _registeredPharmacies.removeAt(index),
                             );
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('${pharmacy['name']} removed'),
+                                content: Text(l10n.pharmacyRemovedMessage(pharmacy['name'].toString())),
                                 backgroundColor: AppColors.warning,
                               ),
                             );
@@ -302,11 +309,11 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   ],
 
                   // ── SECTION 4: Medicine Availability ──
-                  _buildSectionHeader('Medicine Availability'),
+                  _buildSectionHeader(l10n.pharmacyMedicineAvailHeader),
                   const SizedBox(height: 12),
-                  _buildAvailabilitySection(),
+                  _buildAvailabilitySection(l10n),
                   const SizedBox(height: 12),
-                  _buildAvailabilityInfo(),
+                  _buildAvailabilityInfo(l10n),
                 ],
               ]),
             ),
@@ -326,7 +333,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  Widget _buildNearbySection() {
+  Widget _buildNearbySection(AppLocalizations l10n) {
     if (_isSearchingNearby) {
       return Container(
         padding: const EdgeInsets.all(24),
@@ -336,11 +343,11 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.border),
         ),
-        child: const Column(
+        child: Column(
           children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(height: 12),
-            Text('Finding pharmacies near you…'),
+            const CircularProgressIndicator(color: AppColors.primary),
+            const SizedBox(height: 12),
+            Text(l10n.pharmacyFindingNearby),
           ],
         ),
       );
@@ -377,7 +384,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   foregroundColor: AppColors.danger,
                   side: const BorderSide(color: AppColors.danger),
                 ),
-                child: Text(_nearbyErrorActionLabel ?? 'Try Again'),
+                child: Text(_nearbyErrorActionLabel ?? l10n.pharmacyTryAgain),
               ),
             ],
           ],
@@ -416,9 +423,9 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Find pharmacies near me', style: AppTextStyles.titleMedium),
+                    Text(l10n.pharmacyFindNearMe, style: AppTextStyles.titleMedium),
                     Text(
-                      'Uses your device location — free, no account needed',
+                      l10n.pharmacyFindNearMeSubtitle,
                       style: AppTextStyles.bodySmall,
                     ),
                   ],
@@ -442,7 +449,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           border: Border.all(color: AppColors.border),
         ),
         child: Text(
-          'No pharmacies found nearby.',
+          l10n.pharmacyNoNearbyFound,
           style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
         ),
       );
@@ -467,7 +474,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Showing sample pharmacies — live data unavailable right now.',
+                      l10n.pharmacyShowingSampleData,
                       style: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
                     ),
                   ),
@@ -478,7 +485,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
         ...results.map(
           (p) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildNearbyPharmacyCard(p),
+            child: _buildNearbyPharmacyCard(p, l10n),
           ),
         ),
         Align(
@@ -486,14 +493,14 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           child: TextButton.icon(
             onPressed: _findNearbyPharmacies,
             icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Refresh'),
+            label: Text(l10n.pharmacyRefresh),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildNearbyPharmacyCard(Pharmacy pharmacy) {
+  Widget _buildNearbyPharmacyCard(Pharmacy pharmacy, AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -541,7 +548,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${pharmacy.distance.toStringAsFixed(1)} km away',
+                        l10n.pharmacyKmAway(pharmacy.distance.toStringAsFixed(1)),
                         style: AppTextStyles.bodySmall.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
@@ -558,7 +565,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
             padding: const EdgeInsets.all(16),
             child: _buildDetailRow(
               icon: Icons.location_on_outlined,
-              label: 'Address',
+              label: l10n.checkoutConfirmAddress,
               value: pharmacy.address,
             ),
           ),
@@ -575,7 +582,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                       longitude: pharmacy.longitude,
                     ),
                     icon: const Icon(Icons.map_outlined, size: 16),
-                    label: Text('Directions', style: AppTextStyles.labelLarge),
+                    label: Text(l10n.pharmacyDirections, style: AppTextStyles.labelLarge),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       shape: RoundedRectangleBorder(
@@ -591,7 +598,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                       onPressed: () => _makePhoneCall(pharmacy.phone!),
                       icon: const Icon(Icons.phone_outlined, size: 16),
                       label: Text(
-                        'Call',
+                        l10n.pharmacyCall,
                         style: AppTextStyles.labelLarge.copyWith(color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -612,7 +619,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  Widget _buildPharmacyHeader() {
+  Widget _buildPharmacyHeader(AppLocalizations l10n) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -649,14 +656,14 @@ class _PharmacyScreenState extends State<PharmacyScreen>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  'Pharmacy Network',
+                  l10n.pharmacyHeaderTitle,
                   style: AppTextStyles.displaySmall.copyWith(
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Reference template for registering pharmacies',
+                  l10n.pharmacyHeaderSubtitle,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.white70,
                   ),
@@ -682,7 +689,8 @@ class _PharmacyScreenState extends State<PharmacyScreen>
   }
 
   Widget _buildPharmacyCard(
-    Map<String, dynamic> pharmacy, {
+    Map<String, dynamic> pharmacy,
+    AppLocalizations l10n, {
     bool isReference = false,
     VoidCallback? onDelete,
   }) {
@@ -750,7 +758,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                       Row(
                         children: [
                           Text(
-                            isOpen ? 'Open now' : 'Closed',
+                            isOpen ? l10n.pharmacyOpenNow : l10n.pharmacyClosed,
                             style: AppTextStyles.bodySmall.copyWith(
                               color: isOpen
                                   ? AppColors.success
@@ -771,7 +779,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  'Template',
+                                  l10n.pharmacyTemplateBadge,
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
@@ -790,7 +798,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   IconButton(
                     icon: const Icon(Icons.close, color: AppColors.danger),
                     onPressed: onDelete,
-                    tooltip: 'Remove pharmacy',
+                    tooltip: l10n.pharmacyRemoveTooltip,
                   ),
               ],
             ),
@@ -805,28 +813,26 @@ class _PharmacyScreenState extends State<PharmacyScreen>
               children: [
                 _buildDetailRow(
                   icon: Icons.location_on_outlined,
-                  label: 'Address',
+                  label: l10n.checkoutConfirmAddress,
                   value: pharmacy['address'],
                 ),
                 const SizedBox(height: 16),
                 _buildDetailRow(
                   icon: Icons.access_time_outlined,
-                  label: 'Hours',
+                  label: l10n.pharmacyHoursLabel,
                   value: pharmacy['hours'],
                 ),
                 const SizedBox(height: 16),
                 _buildDetailRow(
                   icon: Icons.star_rounded,
-                  label: 'Rating',
-                  value:
-                      '${pharmacy['rating']} (${pharmacy['reviewCount']} reviews)',
+                  label: l10n.pharmacyRatingLabel,
+                  value: l10n.pharmacyRatingValue(pharmacy['rating'].toString(), pharmacy['reviewCount'] as num),
                 ),
                 const SizedBox(height: 16),
                 _buildDetailRow(
                   icon: Icons.delivery_dining_outlined,
-                  label: 'Delivery',
-                  value:
-                      'PKR ${(pharmacy['deliveryFee'] as num).toInt()} · ${pharmacy['deliveryTime']} mins',
+                  label: l10n.pharmacyDeliveryLabel,
+                  value: l10n.pharmacyDeliveryValue((pharmacy['deliveryFee'] as num).toInt(), pharmacy['deliveryTime'] as num),
                 ),
               ],
             ),
@@ -843,7 +849,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                   child: OutlinedButton.icon(
                     onPressed: () => _openDirections(pharmacy['address']),
                     icon: const Icon(Icons.map_outlined, size: 16),
-                    label: Text('Directions', style: AppTextStyles.labelLarge),
+                    label: Text(l10n.pharmacyDirections, style: AppTextStyles.labelLarge),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       shape: RoundedRectangleBorder(
@@ -858,7 +864,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                     onPressed: () => _makePhoneCall(pharmacy['phone']),
                     icon: const Icon(Icons.phone_outlined, size: 16),
                     label: Text(
-                      'Call',
+                      l10n.pharmacyCall,
                       style: AppTextStyles.labelLarge.copyWith(
                         color: Colors.white,
                       ),
@@ -906,7 +912,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  Widget _buildRegisterButton() {
+  Widget _buildRegisterButton(AppLocalizations l10n) {
     return GestureDetector(
       onTap: _showRegistrationForm,
       child: Container(
@@ -936,9 +942,9 @@ class _PharmacyScreenState extends State<PharmacyScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Register a pharmacy', style: AppTextStyles.titleMedium),
+                  Text(l10n.pharmacyRegisterCta, style: AppTextStyles.titleMedium),
                   Text(
-                    'Add your pharmacy to our network',
+                    l10n.pharmacyRegisterCtaSubtitle,
                     style: AppTextStyles.bodySmall,
                   ),
                 ],
@@ -952,7 +958,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  Widget _buildAvailabilitySection() {
+  Widget _buildAvailabilitySection(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -988,7 +994,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Medicine availability',
+                  l10n.pharmacyMedAvailTitle,
                   style: AppTextStyles.headlineSmall,
                 ),
               ],
@@ -1045,7 +1051,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
     );
   }
 
-  Widget _buildAvailabilityInfo() {
+  Widget _buildAvailabilityInfo(AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1059,7 +1065,7 @@ class _PharmacyScreenState extends State<PharmacyScreen>
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Showing sample medicines. Full 18,000+ catalogue integrated with backend.',
+              l10n.pharmacyMedAvailInfo,
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
             ),
           ),
@@ -1134,6 +1140,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DraggableScrollableSheet(
       initialChildSize: 0.85,
       minChildSize: 0.5,
@@ -1158,7 +1165,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Register Pharmacy',
+                        l10n.regPharmacyTitle,
                         style: AppTextStyles.headlineMedium,
                       ),
                       IconButton(
@@ -1168,7 +1175,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                     ],
                   ),
                   Text(
-                    'Fill in your pharmacy details',
+                    l10n.regPharmacySubtitle,
                     style: AppTextStyles.bodySmall,
                   ),
                 ],
@@ -1187,55 +1194,55 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                     children: [
                       // Name
                       _buildFormField(
-                        label: 'Pharmacy Name',
+                        label: l10n.regPharmacyNameLabel,
                         controller: _nameCtrl,
-                        hintText: 'e.g., Care Pharmacy',
+                        hintText: l10n.regPharmacyNameHint,
                         validator: (val) =>
-                            val?.isEmpty ?? true ? 'Name required' : null,
+                            val?.isEmpty ?? true ? l10n.regPharmacyNameRequired : null,
                       ),
                       const SizedBox(height: 16),
 
                       // Address
                       _buildFormField(
-                        label: 'Address',
+                        label: l10n.checkoutConfirmAddress,
                         controller: _addressCtrl,
-                        hintText: 'e.g., F-7 Markaz, Islamabad',
+                        hintText: l10n.regPharmacyAddressHint,
                         maxLines: 2,
                         validator: (val) =>
-                            val?.isEmpty ?? true ? 'Address required' : null,
+                            val?.isEmpty ?? true ? l10n.regPharmacyAddressRequired : null,
                       ),
                       const SizedBox(height: 16),
 
                       // Phone
                       _buildFormField(
-                        label: 'Phone Number',
+                        label: l10n.profilePhoneNumber,
                         controller: _phoneCtrl,
-                        hintText: '+92 51 2827070',
+                        hintText: l10n.regPharmacyPhoneHint,
                         validator: (val) =>
-                            val?.isEmpty ?? true ? 'Phone required' : null,
+                            val?.isEmpty ?? true ? l10n.regPharmacyPhoneRequired : null,
                       ),
                       const SizedBox(height: 16),
 
                       // Hours
                       _buildFormField(
-                        label: 'Operating Hours',
+                        label: l10n.regPharmacyHoursLabel,
                         controller: _hoursCtrl,
-                        hintText: '9:00 AM - 10:00 PM',
+                        hintText: l10n.regPharmacyHoursHint,
                         validator: (val) =>
-                            val?.isEmpty ?? true ? 'Hours required' : null,
+                            val?.isEmpty ?? true ? l10n.regPharmacyHoursRequired : null,
                       ),
                       const SizedBox(height: 16),
 
                       // Delivery Fee
                       _buildFormField(
-                        label: 'Delivery Fee (PKR)',
+                        label: l10n.regPharmacyFeeLabel,
                         controller: _deliveryFeeCtrl,
-                        hintText: 'e.g., 120',
+                        hintText: l10n.regPharmacyFeeHint,
                         keyboardType: TextInputType.number,
                         validator: (val) {
-                          if (val?.isEmpty ?? true) return 'Fee required';
+                          if (val?.isEmpty ?? true) return l10n.regPharmacyFeeRequired;
                           if (double.tryParse(val ?? '') == null)
-                            return 'Enter valid number';
+                            return l10n.regPharmacyInvalidNumber;
                           return null;
                         },
                       ),
@@ -1243,29 +1250,29 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
 
                       // Delivery Time
                       _buildFormField(
-                        label: 'Delivery Time (minutes)',
+                        label: l10n.regPharmacyTimeLabel,
                         controller: _deliveryTimeCtrl,
-                        hintText: 'e.g., 25',
+                        hintText: l10n.regPharmacyTimeHint,
                         keyboardType: TextInputType.number,
                         validator: (val) {
-                          if (val?.isEmpty ?? true) return 'Time required';
+                          if (val?.isEmpty ?? true) return l10n.regPharmacyTimeRequired;
                           if (int.tryParse(val ?? '') == null)
-                            return 'Enter valid number';
+                            return l10n.regPharmacyInvalidNumber;
                           return null;
                         },
                       ),
                       const SizedBox(height: 20),
 
                       // Rating Slider
-                      _buildRatingSlider(),
+                      _buildRatingSlider(l10n),
                       const SizedBox(height: 20),
 
                       // Open/Closed Toggle
-                      _buildStatusToggle(),
+                      _buildStatusToggle(l10n),
                       const SizedBox(height: 20),
 
                       // Preview Card
-                      _buildPreviewSection(),
+                      _buildPreviewSection(l10n),
                     ],
                   ),
                 ),
@@ -1289,7 +1296,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: Text('Cancel', style: AppTextStyles.labelLarge),
+                      child: Text(l10n.commonCancel, style: AppTextStyles.labelLarge),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1315,7 +1322,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                               ),
                             )
                           : Text(
-                              'Register',
+                              l10n.regPharmacyRegisterButton,
                               style: AppTextStyles.labelLarge.copyWith(
                                 color: Colors.white,
                               ),
@@ -1374,11 +1381,11 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
     );
   }
 
-  Widget _buildRatingSlider() {
+  Widget _buildRatingSlider(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Initial Rating', style: AppTextStyles.titleMedium),
+        Text(l10n.regPharmacyInitialRating, style: AppTextStyles.titleMedium),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
@@ -1392,7 +1399,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Rating: ${_rating.toStringAsFixed(1)} ⭐',
+                    l10n.regPharmacyRatingValue(_rating.toStringAsFixed(1)),
                     style: AppTextStyles.titleMedium.copyWith(
                       color: AppColors.secondary,
                     ),
@@ -1416,11 +1423,11 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
     );
   }
 
-  Widget _buildStatusToggle() {
+  Widget _buildStatusToggle(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Status', style: AppTextStyles.titleMedium),
+        Text(l10n.regPharmacyStatus, style: AppTextStyles.titleMedium),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(12),
@@ -1433,7 +1440,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _isOpen ? '✓ Open now' : '✕ Closed',
+                _isOpen ? l10n.regPharmacyOpenNow : l10n.regPharmacyClosedStatus,
                 style: AppTextStyles.titleMedium.copyWith(
                   color: _isOpen ? AppColors.success : AppColors.danger,
                 ),
@@ -1450,11 +1457,11 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
     );
   }
 
-  Widget _buildPreviewSection() {
+  Widget _buildPreviewSection(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Preview', style: AppTextStyles.titleMedium),
+        Text(l10n.regPharmacyPreview, style: AppTextStyles.titleMedium),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(14),
@@ -1488,14 +1495,14 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                       children: [
                         Text(
                           _nameCtrl.text.isEmpty
-                              ? 'Your Pharmacy Name'
+                              ? l10n.regPharmacyNamePlaceholder
                               : _nameCtrl.text,
                           style: AppTextStyles.titleMedium,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          _isOpen ? 'Open now' : 'Closed',
+                          _isOpen ? l10n.pharmacyOpenNow : l10n.pharmacyClosed,
                           style: AppTextStyles.bodySmall.copyWith(
                             color: _isOpen
                                 ? AppColors.success
@@ -1527,7 +1534,7 @@ class _RegisterPharmacyModalState extends State<RegisterPharmacyModal> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    '🚚 PKR ${_deliveryFeeCtrl.text} · ${_deliveryTimeCtrl.text.isEmpty ? '?' : _deliveryTimeCtrl.text} mins',
+                    l10n.regPharmacyDeliveryPreview(_deliveryFeeCtrl.text, _deliveryTimeCtrl.text.isEmpty ? '?' : _deliveryTimeCtrl.text),
                     style: AppTextStyles.bodySmall,
                   ),
                 ),

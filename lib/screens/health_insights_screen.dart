@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/services/mock_data.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
@@ -8,31 +9,32 @@ class HealthInsightsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final insights = MockDataService.mockHealthInsights;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Health Insights'),
+        title: Text(l10n.healthInsightsTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         children: [
-          Text('Smart guidance for your medicines and lifestyle', style: AppTextStyles.bodyLarge),
+          Text(l10n.healthInsightsSubtitle, style: AppTextStyles.bodyLarge),
           const SizedBox(height: 22),
           ...insights.map((insight) => Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: _HealthTipCard(insight: insight),
               )),
           const SizedBox(height: 4),
-          _buildFooterCard(),
+          _buildFooterCard(l10n),
         ],
       ),
     );
   }
 
-  Widget _buildFooterCard() {
+  Widget _buildFooterCard(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.primary,
@@ -42,9 +44,9 @@ class HealthInsightsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Wellness snapshot', style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
+          Text(l10n.healthInsightsWellnessSnapshot, style: AppTextStyles.headlineSmall.copyWith(color: Colors.white)),
           const SizedBox(height: 12),
-          Text('Track a healthy routine and stay informed with daily medication tips.',
+          Text(l10n.healthInsightsWellnessBody,
               style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70)),
         ],
       ),

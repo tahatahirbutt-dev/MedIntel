@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/providers/orders_provider.dart';
 import 'package:med_intel/theme/app_theme.dart';
@@ -14,16 +15,29 @@ class OrderHistoryScreen extends StatefulWidget {
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   List<Map<String, dynamic>> _orders = [];
 
-  String _filterStatus = 'All';
-  final List<String> _statusFilters = [
-    'All',
-    'Pending',
-    'Delivered',
-    'Cancelled',
+  String _filterStatus = 'all';
+  static const List<String> _statusFilters = [
+    'all',
+    'pending',
+    'delivered',
+    'cancelled',
   ];
 
+  String _filterLabel(String status, AppLocalizations l10n) {
+    switch (status) {
+      case 'pending':
+        return l10n.orderFilterPending;
+      case 'delivered':
+        return l10n.orderFilterDelivered;
+      case 'cancelled':
+        return l10n.orderFilterCancelled;
+      default:
+        return l10n.orderFilterAll;
+    }
+  }
+
   List<Map<String, dynamic>> get _filteredOrders {
-    if (_filterStatus == 'All') return _orders;
+    if (_filterStatus == 'all') return _orders;
     return _orders
         .where(
           (o) =>
@@ -38,17 +52,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     _orders = context.watch<OrdersProvider>().orders;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _buildHeader(),
-          _buildFilterChips(),
+          _buildHeader(l10n),
+          _buildFilterChips(l10n),
           Expanded(
             child: _filteredOrders.isEmpty
-                ? _buildEmptyState()
-                : _buildOrderList(),
+                ? _buildEmptyState(l10n)
+                : _buildOrderList(l10n),
           ),
         ],
       ),
@@ -57,7 +72,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   // ── Header ────────────────────────────────────
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return SafeArea(
       top: true,
       bottom: false,
@@ -81,9 +96,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Order History',
-                    style: TextStyle(
+                  Text(
+                    l10n.orderHistoryTitle,
+                    style: const TextStyle(
                       fontFamily: 'Outfit',
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -91,7 +106,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     ),
                   ),
                   Text(
-                    '${_orders.length} total orders',
+                    l10n.orderHistoryTotalOrders(_orders.length),
                     style: TextStyle(
                       fontFamily: 'DM Sans',
                       fontSize: 13,
@@ -110,12 +125,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 children: [
                   _headerBadge(
                     '${_orders.where((o) => o['status'] == 'pending').length}',
-                    'Pending',
+                    l10n.orderFilterPending,
                     AppColors.warning,
                   ),
                   _headerBadge(
                     '${_orders.where((o) => o['status'] == 'delivered').length}',
-                    'Done',
+                    l10n.orderHistoryDone,
                     AppColors.success,
                   ),
                 ],
@@ -161,7 +176,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   // ── Filter chips ──────────────────────────────
 
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(AppLocalizations l10n) {
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -191,7 +206,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     ),
                   ),
                   child: Text(
-                    status,
+                    _filterLabel(status, l10n),
                     style: AppTextStyles.labelMedium.copyWith(
                       color: isSelected
                           ? Colors.white
@@ -212,18 +227,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   // ── Order list ────────────────────────────────
 
-  Widget _buildOrderList() {
+  Widget _buildOrderList(AppLocalizations l10n) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _filteredOrders.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _buildOrderCard(_filteredOrders[i]),
+      itemBuilder: (_, i) => _buildOrderCard(_filteredOrders[i], l10n),
     );
   }
 
   // ── Order card ────────────────────────────────
 
-  Widget _buildOrderCard(Map<String, dynamic> order) {
+  Widget _buildOrderCard(Map<String, dynamic> order, AppLocalizations l10n) {
     final status = order['status'] as String;
     final statusColor = _statusColor(status);
     final statusIcon = _statusIcon(status);
@@ -271,7 +286,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Placed on ${order['date']}',
+                        l10n.orderHistoryPlacedOn(order['date'].toString()),
                         style: AppTextStyles.bodySmall,
                       ),
                     ],
@@ -289,7 +304,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     border: Border.all(color: statusColor.withOpacity(0.3)),
                   ),
                   child: Text(
-                    status.toUpperCase(),
+                    _filterLabel(status, l10n).toUpperCase(),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: statusColor,
                       fontWeight: FontWeight.w700,
@@ -380,9 +395,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Total', style: AppTextStyles.bodySmall),
+                    Text(l10n.orderHistoryTotal, style: AppTextStyles.bodySmall),
                     Text(
-                      'PKR ${order['total'].toStringAsFixed(0)}',
+                      l10n.commonPricePkr(order['total'].toStringAsFixed(0)),
                       style: AppTextStyles.headlineMedium.copyWith(
                         color: AppColors.success,
                       ),
@@ -397,7 +412,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         ? Icons.star_outline
                         : Icons.star,
                     label: order['rating'] == null
-                        ? 'Rate'
+                        ? l10n.orderHistoryRate
                         : '${order['rating']}',
                     color: Colors.amber,
                     onTap: () => order['rating'] == null
@@ -407,7 +422,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   const SizedBox(width: 8),
                   _actionBtn(
                     icon: Icons.refresh_rounded,
-                    label: 'Reorder',
+                    label: l10n.orderHistoryReorder,
                     color: AppColors.primary,
                     onTap: () => _reorder(order),
                     filled: true,
@@ -415,7 +430,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 ] else if (status == 'pending') ...[
                   _actionBtn(
                     icon: Icons.location_on_outlined,
-                    label: 'Track order',
+                    label: l10n.orderHistoryTrackOrder,
                     color: AppColors.primary,
                     onTap: () => _trackOrder(order),
                     filled: true,
@@ -465,8 +480,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   // ── Empty state ───────────────────────────────
 
-  Widget _buildEmptyState() {
-    final isFiltered = _filterStatus != 'All';
+  Widget _buildEmptyState(AppLocalizations l10n) {
+    final isFiltered = _filterStatus != 'all';
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -486,15 +501,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           const SizedBox(height: 20),
           Text(
             isFiltered
-                ? 'No ${_filterStatus.toLowerCase()} orders'
-                : 'No orders yet',
+                ? l10n.orderHistoryNoFilteredOrders(_filterLabel(_filterStatus, l10n))
+                : l10n.orderHistoryNoOrdersYet,
             style: AppTextStyles.headlineMedium,
           ),
           const SizedBox(height: 8),
           Text(
             isFiltered
-                ? 'Try selecting a different filter'
-                : 'Your order history will appear here',
+                ? l10n.orderHistoryTryDifferentFilter
+                : l10n.orderHistoryEmptyBody,
             style: AppTextStyles.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -530,7 +545,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Find Pharmacies',
+                      l10n.orderHistoryFindPharmacies,
                       style: AppTextStyles.buttonText.copyWith(
                         color: Colors.white,
                       ),
@@ -574,6 +589,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   void _showRatingDialog(Map<String, dynamic> order) {
+    final l10n = AppLocalizations.of(context)!;
     int tempRating = 0;
     showDialog(
       context: context,
@@ -582,7 +598,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: Text('Rate your order', style: AppTextStyles.headlineMedium),
+          title: Text(l10n.orderHistoryRateTitle, style: AppTextStyles.headlineMedium),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -616,7 +632,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             ElevatedButton(
               onPressed: tempRating == 0
@@ -628,8 +644,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       );
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Thank you for your rating!'),
+                        SnackBar(
+                          content: Text(l10n.orderHistoryRatingThanks),
                         ),
                       );
                     },
@@ -641,7 +657,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   vertical: 10,
                 ),
               ),
-              child: const Text('Submit'),
+              child: Text(l10n.commonSubmit),
             ),
           ],
         ),
@@ -657,9 +673,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   void _reorder(Map<String, dynamic> order) {
+    final l10n = AppLocalizations.of(context)!;
     final items = order['items'] as List? ?? [];
     if (items.isEmpty) {
-      showAppSnackBar(context, "Couldn't find this order's items");
+      showAppSnackBar(context, l10n.orderHistoryNoItemsFound);
       return;
     }
 
@@ -668,17 +685,17 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       final map = item as Map;
       cart.addItem(
         id: map['id'].toString(),
-        name: map['name']?.toString() ?? 'Unknown',
+        name: map['name']?.toString() ?? l10n.commonUnknown,
         price: (map['price'] as num?)?.toDouble() ?? 0.0,
-        dosage: map['dosage']?.toString() ?? 'N/A',
+        dosage: map['dosage']?.toString() ?? l10n.commonNotAvailable,
         quantity: (map['quantity'] as num?)?.toInt() ?? 1,
       );
     }
 
     showAppSnackBar(
       context,
-      'Items added to cart',
-      actionLabel: 'View Cart',
+      l10n.orderHistoryItemsAddedToCart,
+      actionLabel: l10n.commonViewCart,
       onAction: () => Navigator.pushNamed(context, '/cart'),
     );
   }
@@ -692,26 +709,27 @@ class OrderTrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final status = order['status'] as String;
     final isDelivered = status == 'delivered';
 
     final steps = [
       _Step(
-        'Order Confirmed',
-        'Your order has been placed',
+        l10n.orderTrackStep1Title,
+        l10n.orderTrackStep1Body,
         Icons.check_circle_outline,
       ),
       _Step(
-        'Preparing',
-        'Pharmacy is packing your medicines',
+        l10n.orderTrackStep2Title,
+        l10n.orderTrackStep2Body,
         Icons.inventory_2_outlined,
       ),
       _Step(
-        'Out for Delivery',
-        'On the way to you',
+        l10n.orderTrackStep3Title,
+        l10n.orderTrackStep3Body,
         Icons.local_shipping_outlined,
       ),
-      _Step('Delivered', 'Order delivered successfully', Icons.home_outlined),
+      _Step(l10n.orderTrackStep4Title, l10n.orderTrackStep4Body, Icons.home_outlined),
     ];
 
     final completedCount = isDelivered ? 4 : 1;
@@ -740,9 +758,9 @@ class OrderTrackingScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Track Order',
-                        style: TextStyle(
+                      Text(
+                        l10n.orderTrackTitle,
+                        style: const TextStyle(
                           fontFamily: 'Outfit',
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
@@ -803,8 +821,8 @@ class OrderTrackingScreen extends StatelessWidget {
                           children: [
                             Text(
                               isDelivered
-                                  ? 'Delivered on ${order['deliveryDate']}'
-                                  : 'Estimated: ~2 hours',
+                                  ? l10n.orderTrackDeliveredOn(order['deliveryDate'].toString())
+                                  : l10n.orderTrackEstimated,
                               style: AppTextStyles.titleMedium,
                             ),
                             Text(
@@ -821,7 +839,7 @@ class OrderTrackingScreen extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Order Status',
+                      l10n.orderTrackStatusHeading,
                       style: AppTextStyles.headlineSmall,
                     ),
                   ),

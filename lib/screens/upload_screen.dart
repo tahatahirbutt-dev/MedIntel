@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/screens/result_screen.dart';
 // import 'package:med_intel/services/django_prescription_service.dart';
 import 'package:med_intel/services/mock_data.dart';
@@ -66,10 +67,11 @@ class _UploadScreenState extends State<UploadScreen>
   }
 
   Future<void> _uploadPrescription() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a prescription image first'),
+        SnackBar(
+          content: Text(l10n.uploadSelectImageFirst),
         ),
       );
       return;
@@ -97,7 +99,7 @@ class _UploadScreenState extends State<UploadScreen>
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.danger),
+        SnackBar(content: Text(l10n.homeGenericError(e.toString())), backgroundColor: AppColors.danger),
       );
     } finally {
       if (mounted) {
@@ -109,29 +111,30 @@ class _UploadScreenState extends State<UploadScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           // ── Custom Header ────────────────────
-          SliverToBoxAdapter(child: _buildHeader()),
+          SliverToBoxAdapter(child: _buildHeader(l10n)),
 
           // ── Main Content ─────────────────────
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildUploadZone(),
+                _buildUploadZone(l10n),
                 const SizedBox(height: 20),
-                _buildActionRow(),
+                _buildActionRow(l10n),
                 const SizedBox(height: 28),
-                _buildUploadButton(),
+                _buildUploadButton(l10n),
                 const SizedBox(height: 20),
                 if (widget.onOpenMedicineSearch != null) ...[
-                  _buildMedicineSearchShortcut(),
+                  _buildMedicineSearchShortcut(l10n),
                   const SizedBox(height: 20),
                 ],
-                _buildTipsCard(),
+                _buildTipsCard(l10n),
               ]),
             ),
           ),
@@ -140,7 +143,7 @@ class _UploadScreenState extends State<UploadScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l10n) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -168,9 +171,9 @@ class _UploadScreenState extends State<UploadScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Scan Prescription',
-                style: TextStyle(
+              Text(
+                l10n.uploadHeaderTitle,
+                style: const TextStyle(
                   fontFamily: 'Outfit',
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -178,7 +181,7 @@ class _UploadScreenState extends State<UploadScreen>
                 ),
               ),
               Text(
-                'AI-powered medicine detection',
+                l10n.uploadHeaderSubtitle,
                 style: TextStyle(
                   fontFamily: 'DM Sans',
                   fontSize: 13,
@@ -192,14 +195,14 @@ class _UploadScreenState extends State<UploadScreen>
     );
   }
 
-  Widget _buildUploadZone() {
+  Widget _buildUploadZone(AppLocalizations l10n) {
     return GestureDetector(
       onTap: _isUploading ? null : () => _pickImage(ImageSource.gallery),
-      child: _selectedImage == null ? _buildEmptyZone() : _buildImagePreview(),
+      child: _selectedImage == null ? _buildEmptyZone(l10n) : _buildImagePreview(l10n),
     );
   }
 
-  Widget _buildEmptyZone() {
+  Widget _buildEmptyZone(AppLocalizations l10n) {
     return AnimatedBuilder(
       animation: _pulseScale,
       builder: (_, child) =>
@@ -238,14 +241,14 @@ class _UploadScreenState extends State<UploadScreen>
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Tap to upload prescription',
+                  l10n.uploadTapToUpload,
                   style: AppTextStyles.titleMedium.copyWith(
                     color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'JPG, PNG, or PDF supported',
+                  l10n.uploadFormatsSupported,
                   style: AppTextStyles.bodySmall,
                 ),
               ],
@@ -283,7 +286,7 @@ class _UploadScreenState extends State<UploadScreen>
         .toList();
   }
 
-  Widget _buildImagePreview() {
+  Widget _buildImagePreview(AppLocalizations l10n) {
     return Container(
       height: 240,
       decoration: BoxDecoration(
@@ -319,9 +322,9 @@ class _UploadScreenState extends State<UploadScreen>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Analysing prescription...',
-                      style: TextStyle(
+                    Text(
+                      l10n.uploadAnalysing,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontFamily: 'DM Sans',
                         fontSize: 14,
@@ -368,14 +371,14 @@ class _UploadScreenState extends State<UploadScreen>
                     color: AppColors.success,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle, color: Colors.white, size: 14),
-                      SizedBox(width: 6),
+                      const Icon(Icons.check_circle, color: Colors.white, size: 14),
+                      const SizedBox(width: 6),
                       Text(
-                        'Ready to analyse',
-                        style: TextStyle(
+                        l10n.uploadReadyToAnalyse,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontFamily: 'DM Sans',
                           fontSize: 12,
@@ -392,13 +395,13 @@ class _UploadScreenState extends State<UploadScreen>
     );
   }
 
-  Widget _buildActionRow() {
+  Widget _buildActionRow(AppLocalizations l10n) {
     return Row(
       children: [
         Expanded(
           child: _buildSourceButton(
             icon: Icons.camera_alt_outlined,
-            label: 'Camera',
+            label: l10n.uploadCamera,
             onTap: () => _pickImage(ImageSource.camera),
           ),
         ),
@@ -406,7 +409,7 @@ class _UploadScreenState extends State<UploadScreen>
         Expanded(
           child: _buildSourceButton(
             icon: Icons.photo_library_outlined,
-            label: 'Gallery',
+            label: l10n.uploadGallery,
             onTap: () => _pickImage(ImageSource.gallery),
           ),
         ),
@@ -445,11 +448,11 @@ class _UploadScreenState extends State<UploadScreen>
     );
   }
 
-  Widget _buildUploadButton() {
+  Widget _buildUploadButton(AppLocalizations l10n) {
     return AppPrimaryButton(
       label: _selectedImage == null
-          ? 'Select image first'
-          : 'Analyse prescription',
+          ? l10n.uploadSelectImageFirstButton
+          : l10n.uploadAnalysePrescription,
       icon: Icons.auto_awesome,
       onPressed: (_isUploading || _selectedImage == null)
           ? null
@@ -458,7 +461,7 @@ class _UploadScreenState extends State<UploadScreen>
     );
   }
 
-  Widget _buildMedicineSearchShortcut() {
+  Widget _buildMedicineSearchShortcut(AppLocalizations l10n) {
     return GestureDetector(
       onTap: widget.onOpenMedicineSearch,
       child: Container(
@@ -498,14 +501,14 @@ class _UploadScreenState extends State<UploadScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Search medicines',
+                    l10n.uploadSearchMedicines,
                     style: AppTextStyles.titleMedium.copyWith(
                       color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Browse catalog, prices & alternatives',
+                    l10n.uploadBrowseCatalog,
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Colors.white.withOpacity(0.85),
                     ),
@@ -524,27 +527,27 @@ class _UploadScreenState extends State<UploadScreen>
     );
   }
 
-  Widget _buildTipsCard() {
+  Widget _buildTipsCard(AppLocalizations l10n) {
     final tips = [
       (
         Icons.wb_sunny_outlined,
-        'Ensure good lighting',
-        'Natural light works best',
+        l10n.uploadTip1Title,
+        l10n.uploadTip1Body,
       ),
       (
         Icons.straighten,
-        'Keep it flat and straight',
-        'Avoid curled or folded paper',
+        l10n.uploadTip2Title,
+        l10n.uploadTip2Body,
       ),
       (
         Icons.filter_center_focus,
-        'Focus on medicine names',
-        'Capture all text clearly',
+        l10n.uploadTip3Title,
+        l10n.uploadTip3Body,
       ),
       (
         Icons.do_not_disturb_on_outlined,
-        'Avoid shadows',
-        'Position above the paper',
+        l10n.uploadTip4Title,
+        l10n.uploadTip4Body,
       ),
     ];
 
@@ -575,7 +578,7 @@ class _UploadScreenState extends State<UploadScreen>
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'Tips for best results',
+                  l10n.uploadTipsTitle,
                   style: AppTextStyles.headlineSmall,
                 ),
               ],

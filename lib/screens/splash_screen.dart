@@ -9,6 +9,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({
@@ -94,6 +95,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final p = widget.dark ? _SplashPalette.dark : _SplashPalette.light;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: p.background,
@@ -121,9 +123,9 @@ class _SplashScreenState extends State<SplashScreen>
                     const SizedBox(height: 10),
                     _underline(p, t),
                     const SizedBox(height: 14),
-                    _tagline(p, t),
+                    _tagline(p, t, l10n),
                     const Spacer(flex: 7),
-                    _footer(p, t),
+                    _footer(p, t, l10n),
                     const SizedBox(height: 28),
                   ],
                 ),
@@ -211,10 +213,13 @@ class _SplashScreenState extends State<SplashScreen>
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: p.badgeBorder, width: 1.2),
           ),
-          // Swap for Image.asset('assets/icon/medintel_mark.png') for the real mark —
-          // note: avoid assets/images/logo2.png here, it bakes the wordmark/tagline
-          // into the same PNG, which would duplicate the live wordmark below it.
-          child: Icon(Icons.receipt_long_rounded, size: 32, color: p.accent),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16.5),
+            child: Image.asset(
+              'assets/images/logo_mark.png',
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
       ),
     );
@@ -229,7 +234,10 @@ class _SplashScreenState extends State<SplashScreen>
         child: Text.rich(
           TextSpan(
             children: [
-              TextSpan(text: 'MEDI', style: TextStyle(color: p.wordPrimary)),
+              TextSpan(
+                text: 'MED',
+                style: TextStyle(color: p.wordPrimary),
+              ),
               TextSpan(text: 'INTEL', style: TextStyle(color: p.accent)),
             ],
           ),
@@ -256,18 +264,18 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  Widget _tagline(_SplashPalette p, double t) {
+  Widget _tagline(_SplashPalette p, double t, AppLocalizations l10n) {
     final a = _tailIn.transform(t);
     return Opacity(
       opacity: (a * 0.9).clamp(0.0, 1.0),
       child: Text(
-        'Smarter medicine discovery',
+        l10n.splashTagline,
         style: TextStyle(fontSize: 13, color: p.muted, letterSpacing: 0.3),
       ),
     );
   }
 
-  Widget _footer(_SplashPalette p, double t) {
+  Widget _footer(_SplashPalette p, double t, AppLocalizations l10n) {
     final a = _tailIn.transform(t);
     return Opacity(
       opacity: a.clamp(0.0, 1.0),
@@ -286,7 +294,7 @@ class _SplashScreenState extends State<SplashScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            'Loading your medicine catalogue',
+            l10n.splashLoadingCatalogue,
             style: TextStyle(
               fontSize: 11.5,
               color: p.muted,

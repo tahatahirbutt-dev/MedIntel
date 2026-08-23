@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/theme/app_theme.dart';
 
 class FeedbackScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Thank you for your feedback!'),
+        content: Text(AppLocalizations.of(context)!.feedbackThankYou),
         backgroundColor: AppColors.success,
       ),
     );
@@ -49,29 +50,30 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Feedback & Ratings'),
+        title: Text(l10n.feedbackTitle),
         backgroundColor: AppColors.surface,
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         children: [
-          Text('Help us improve your pharmacy experience', style: AppTextStyles.bodyLarge),
+          Text(l10n.feedbackSubtitle, style: AppTextStyles.bodyLarge),
           const SizedBox(height: 22),
-          _buildRatingCard(),
+          _buildRatingCard(l10n),
           const SizedBox(height: 18),
-          _buildCommentField(),
+          _buildCommentField(l10n),
           const SizedBox(height: 20),
-          AppPrimaryButton(label: 'Submit feedback', onPressed: _submitFeedback),
+          AppPrimaryButton(label: l10n.feedbackSubmit, onPressed: _submitFeedback),
         ],
       ),
     );
   }
 
-  Widget _buildRatingCard() {
+  Widget _buildRatingCard(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -82,7 +84,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Rate your experience', style: AppTextStyles.headlineSmall),
+          Text(l10n.feedbackRateExperience, style: AppTextStyles.headlineSmall),
           const SizedBox(height: 14),
           Row(
             children: List.generate(5, (index) {
@@ -96,13 +98,13 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
             }),
           ),
           const SizedBox(height: 6),
-          Text('Selected: $_rating stars', style: AppTextStyles.bodyMedium),
+          Text(l10n.feedbackSelectedStars(_rating), style: AppTextStyles.bodyMedium),
         ],
       ),
     );
   }
 
-  Widget _buildCommentField() {
+  Widget _buildCommentField(AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -113,8 +115,8 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       child: TextField(
         controller: _commentController,
         maxLines: 6,
-        decoration: const InputDecoration(
-          hintText: 'Leave your comments here',
+        decoration: InputDecoration(
+          hintText: l10n.feedbackCommentHint,
           border: InputBorder.none,
         ),
       ),

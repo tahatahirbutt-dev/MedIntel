@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:med_intel/l10n/app_localizations.dart';
 import 'package:med_intel/navigation/app_navigation.dart';
 import 'package:med_intel/providers/cart_provider.dart';
 import 'package:med_intel/providers/saved_medicines_provider.dart';
@@ -13,20 +14,21 @@ class SavedMedicinesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final saved = context.watch<SavedMedicinesProvider>();
     final items = saved.items;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          _buildHeader(items.length),
+          _buildHeader(items.length, l10n),
           Expanded(
             child: items.isEmpty
-                ? _buildEmptyState(context)
+                ? _buildEmptyState(context, l10n)
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
                     itemCount: items.length,
                     itemBuilder: (context, index) =>
-                        _buildSavedCard(context, items[index]),
+                        _buildSavedCard(context, items[index], l10n),
                   ),
           ),
         ],
@@ -34,7 +36,7 @@ class SavedMedicinesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(int itemCount) {
+  Widget _buildHeader(int itemCount, AppLocalizations l10n) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -63,20 +65,16 @@ class SavedMedicinesScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Saved Medicines',
-                  style: TextStyle(
-                    fontFamily: 'Outfit',
+                Text(
+                  l10n.savedMedicinesTitle,
+                  style: AppTextStyles.headlineMedium.copyWith(
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
                 ),
                 Text(
-                  '$itemCount item${itemCount != 1 ? 's' : ''}',
-                  style: TextStyle(
-                    fontFamily: 'DM Sans',
-                    fontSize: 13,
+                  l10n.savedMedicinesItemCount(itemCount),
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.white.withOpacity(0.8),
                   ),
                 ),
@@ -88,7 +86,7 @@ class SavedMedicinesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -106,16 +104,16 @@ class SavedMedicinesScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Text('No saved medicines', style: AppTextStyles.headlineMedium),
+          Text(l10n.savedMedicinesEmptyTitle, style: AppTextStyles.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Tap the bookmark icon on a medicine to save it here',
+            l10n.savedMedicinesEmptyBody,
             style: AppTextStyles.bodyMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
           AppPrimaryButton(
-            label: 'Browse Medicines',
+            label: l10n.savedMedicinesBrowse,
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -123,10 +121,10 @@ class SavedMedicinesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSavedCard(BuildContext context, Map<String, dynamic> medicine) {
+  Widget _buildSavedCard(BuildContext context, Map<String, dynamic> medicine, AppLocalizations l10n) {
     final id = medicine['id']?.toString() ?? '';
     final price = (medicine['price'] as num?)?.toDouble() ?? 0.0;
-    final dosage = medicine['dosage']?.toString() ?? 'N/A';
+    final dosage = medicine['dosage']?.toString() ?? l10n.commonNotAvailable;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -147,14 +145,14 @@ class SavedMedicinesScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      medicine['name']?.toString() ?? 'Unknown',
+                      medicine['name']?.toString() ?? l10n.commonUnknown,
                       style: AppTextStyles.titleMedium,
                     ),
                     const SizedBox(height: 4),
-                    Text('Dosage: $dosage', style: AppTextStyles.bodySmall),
+                    Text(l10n.commonDosageLabel(dosage), style: AppTextStyles.bodySmall),
                     const SizedBox(height: 4),
                     Text(
-                      'PKR ${price.toStringAsFixed(0)}',
+                      l10n.commonPricePkr(price.toStringAsFixed(0)),
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.success,
                         fontWeight: FontWeight.w600,
@@ -186,7 +184,7 @@ class SavedMedicinesScreen extends StatelessWidget {
                     },
                   ),
                   icon: const Icon(Icons.info_outline, size: 18),
-                  label: const Text('Details'),
+                  label: Text(l10n.commonDetails),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(0, 44),
                   ),
@@ -198,17 +196,17 @@ class SavedMedicinesScreen extends StatelessWidget {
                   onPressed: () {
                     context.read<CartProvider>().addItem(
                       id: id,
-                      name: medicine['name']?.toString() ?? 'Unknown',
+                      name: medicine['name']?.toString() ?? l10n.commonUnknown,
                       price: price,
                       dosage: dosage,
                     );
                     showAppSnackBar(
                       context,
-                      '${medicine['name']} added to cart',
+                      l10n.commonAddedToCart(medicine['name']?.toString() ?? l10n.commonUnknown),
                     );
                   },
                   icon: const Icon(Icons.add_shopping_cart, size: 18),
-                  label: const Text('Add'),
+                  label: Text(l10n.commonAdd),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(0, 44),
                     backgroundColor: AppColors.primary,
