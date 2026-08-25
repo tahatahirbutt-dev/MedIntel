@@ -54,3 +54,7 @@ app.*.map.json
 .git
 .idea
 .vscode
+
+# Firebase generated files (contain API keys)
+google-services.json
+GoogleService-Info.plist
