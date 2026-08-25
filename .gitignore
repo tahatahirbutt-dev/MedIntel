@@ -58,3 +58,5 @@ app.*.map.json
 # Firebase generated files (contain API keys)
 google-services.json
 GoogleService-Info.plist
+google-services.json
+GoogleService-Info.plist
